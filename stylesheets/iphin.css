@@ -3,7 +3,6 @@
 ul.alerts li p.pair {font-weight: bold; color: black; font-size: 13px;}
 ul.alerts li p.pair span {float: right; margin-right: 20px; font-weight: normal; color: #666 !important;}
 ul.alerts li p.content {font-weight: normal; margin-top: 10px !important;}
-div.response {color: gray; border: 3px solid; width: 50px; padding: 12px 0px 12px 8px; margin: 10px auto; -webkit-border-radius: 8px;}
 .submit {color: white !important; text-align: center; margin: 10px 0px;}
 
 ul.people li p.pair {font-weight: bold; color: black; font-size: 13px;}
