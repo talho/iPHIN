@@ -15,11 +15,11 @@ var jQT = new $.jQTouch({
 
 var DOMAIN = "http://localhost:3000"; /* "http://www.txphin.org" release */
 
-function setCookie(data) {sessionStorage._cookie = data.cookie;}
-function getCookie() {return sessionStorage._cookie;}
+function setCookie(data) {window._cookie = data.cookie;}
+function getCookie() {return window._cookie;}
 
-function setAlertDetail(data) {sessionStorage.alertDetail = data;}
-function getAlertDetail() {return sessionStorage.alertDetail;}
+function setAlertDetail(data) {window.alertDetail = data;}
+function getAlertDetail() {return window.alertDetail;}
 
 // function setRolesAge(age) {localStorage.rolesAge = age;}
 // function getRolesAge() {return (localStorage.rolesAge||0);}
@@ -109,14 +109,41 @@ $(document).ready(function() {
 
 	$("#alerts_preview").setTemplateElement("alerts_preview_template");
 	$("#alert_detail_sub").setTemplateElement("alerts_detail_template");
+		
+	function populateAlertPane(data, id) { //Build an html string from the JSON data and append it to alert_details  
+		$('#alert_details').empty();	
+		alertDetailsString = '<ul class="alerts rounded"><li><p class="header">'+ data[id].header + '</p>';
+		for ( var p in data[id].detail.pair ) {  //loop through the details for this alert 
+			alertDetailsString += '<p class="pair">' + 
+			data[id].detail.pair[p].key + '<span>' + 
+			data[id].detail.pair[p].value + '</span></p>';
+		}
+		alertDetailsString += '<p class="content">' + data[id].detail.content + '</p>';	 	
+		 
+		if (data[id].detail.path.length > 0) {  //if this alert requires acknowledgement
+			alertDetailsString += '<form id="alert_ack_form" action=' + data[id].detail.path + ' method="post" >';
+			if (data[id].detail.response != null) {	//if this is an 'advanced' acknowledgement
+				alertDetailsString += '<br><select name="alert_attempt[call_down_response]" >' + 
+					'<option value="" SELECTED>Select your response...</option>';
+				for (var o in data[id].detail.response ){
+					alertDetailsString += ' <option value="' + o + '">' + data[id].detail.response[o] + '</option>';
+				}	
+				alertDetailsString += '</select>';
+			}
+			alertDetailsString += '<a href="#alerts_pane" class="blueButton submit acknowledge">Acknowledge</a>' +
+				'<input name="_method" type="hidden" value="put">' + 
+				'<input name="authenticity_token" type="hidden" value="/">' +
+				'</form>';
+		}
+		alertDetailsString += '</ul></li>';		
+		$('#alert_details').append(alertDetailsString);	
+	}
 
 	function loadAlertsData(data) {
 		$('#alerts_preview').processTemplate(data);
-		$("#alerts_preview li a").click(function(e) {
-			id = $(this).attr("alert_id")||0;
-			alert(data[id].header);
-			$('#alert_detail_sub').processTemplate(data[$(this).attr("alert_id")||0]);
-			jQT.goTo($('#alert_detail_pane'), 'slide');
+		$("#alerts_preview li a").click(function(e) {		
+			var id = $(this).attr("alert_id")||0;	//
+			populateAlertPane(data,id);  //fill the detail pane with data 
 		});
 		return false;
 	};
@@ -160,7 +187,7 @@ $(document).ready(function() {
 			success: function(data) {
 				setRoles(data);
 				$('#people_roles_select').processTemplate(getRoles());},
-			error: function(xhr,status) {alert(xhr.status);}
+			error: function(xhr,status) {alert('Error fetching Roles: ' + xhr.status.text);}
 		});
 	}
 
@@ -175,7 +202,7 @@ $(document).ready(function() {
 			success: function(data) {
 				setJurisdictions(data);
 				$('#people_jurisdictions_select').processTemplate(getJurisdictions());},
-			error: function(xhr,status) {alert(xhr.status);}
+			error: function(xhr,status) {alert('Error fetching Jurisdictions: ' + xhr.status);}
 		});
 	}
 
