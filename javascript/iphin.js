@@ -96,20 +96,6 @@ $(document).ready(function() {
     if (info.direction == 'in') fetchAlerts();
 	});
 	
-	function fetchAlerts() {
-		$.ajax({
-		   type: "GET",
-		   dataType: "json",
-		   url: DOMAIN + "/han.json",
-			 beforeSend: function(xhr) { xhr.setRequestHeader("Cookie", getCookie()); },
-		   success: function(data) {loadAlertsData(data);},
-		   error: function(xhr,status) {alert(xhr.status);}
-		});
-	}
-
-	$("#alerts_preview").setTemplateElement("alerts_preview_template");
-	$("#alert_detail_sub").setTemplateElement("alerts_detail_template");
-		
 	function populateAlertPane(data, id) { //Build an html string from the JSON data and append it to alert_details  
 		$('#alert_details').empty();	
 		alertDetailsString = '<ul class="alerts rounded"><li><p class="header">'+ data[id].header + '</p>';
@@ -137,7 +123,21 @@ $(document).ready(function() {
 		}
 		alertDetailsString += '</ul></li>';		
 		$('#alert_details').append(alertDetailsString);	
+	}	
+	
+	function fetchAlerts() {
+		$.ajax({
+		   type: "GET",
+		   dataType: "json",
+		   url: DOMAIN + "/han.json",
+			 beforeSend: function(xhr) { xhr.setRequestHeader("Cookie", getCookie()); },
+		   success: function(data) {loadAlertsData(data);},
+		   error: function(xhr,status) {alert('Network error: Could not fetch alerts [' + xhr.status + ']' );}
+		});
 	}
+
+	$("#alerts_preview").setTemplateElement("alerts_preview_template");
+	$("#alert_detail_sub").setTemplateElement("alerts_detail_template");
 
 	function loadAlertsData(data) {
 		$('#alerts_preview').processTemplate(data);
@@ -187,7 +187,7 @@ $(document).ready(function() {
 			success: function(data) {
 				setRoles(data);
 				$('#people_roles_select').processTemplate(getRoles());},
-			error: function(xhr,status) {alert('Error fetching Roles: ' + xhr.status.text);}
+			error: function(xhr,status) {alert('Network error: Could not fetch Roles [' + xhr.status + ']');}
 		});
 	}
 
@@ -202,7 +202,7 @@ $(document).ready(function() {
 			success: function(data) {
 				setJurisdictions(data);
 				$('#people_jurisdictions_select').processTemplate(getJurisdictions());},
-			error: function(xhr,status) {alert('Error fetching Jurisdictions: ' + xhr.status);}
+			error: function(xhr,status) {alert('Network error: could not fetch jurisdictions [' + xhr.status + ']');}
 		});
 	}
 
