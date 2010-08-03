@@ -81,8 +81,8 @@ $(document).ready(function() {
 		   data: $('#signin_form').serialize(),
 		   dataType: "json",
 		   url: DOMAIN + "/session.json",
-			 timeout: 1000,
-			cache: false,
+			//timeout: 1000,
+			//cache: false,
 		   success: function(data) {
 				 setCookie(data);
 				 jQT.goTo($('#alerts_pane'), 'flip')
@@ -100,22 +100,23 @@ $(document).ready(function() {
 	// Load the Alert previews
 
 	$('#alerts_pane').bind('pageAnimationStart', function(event, info){
-    if (info.direction == 'in') fetchAlerts();
+   	if (info.direction == 'in') fetchAlerts();
 	});
 	
-	function populateAlertPane(data, id) { //Build an html string from the JSON data and append it to alert_details  
+	function populateAlertPane(data, id) { //Build an html string from the JSON data and append it to alert_details.  This is messy :(
 		$('#alert_details').empty();	
-		alertDetailsString = '<ul class="alerts rounded"><li><p class="header">'+ data[id].header + '</p>';
+		alertDetailsString = '<ul class="alerts rounded"><li><p class="header" id="alertDetailHeader">'+ data[id].header + '</p>';
 		for ( var p in data[id].detail.pair ) {  //loop through the details for this alert 
 			alertDetailsString += '<p class="pair">' + 
 			data[id].detail.pair[p].key + '<span>' + 
 			data[id].detail.pair[p].value + '</span></p>';
 		}
-		alertDetailsString += '<p class="content">' + data[id].detail.content + '</p>';	 	
-		 
-		if (data[id].detail.path.length > 0) {  //if this alert requires acknowledgement
+		alertDetailsString += '<p class="content" id="alertDetailContent">' + data[id].detail.content + '</p>';	 	 
+		///////////if this alert requires acknowledgement
+		if (data[id].detail.path.length > 0) {  
 			alertDetailsString += '<form id="alert_ack_form" action=' + data[id].detail.path + ' method="post" >';
-			if (data[id].detail.response != null) {	//if this is an 'advanced' acknowledgement
+			////////////if this is an 'advanced' acknowledgement
+			if (data[id].detail.response != null) {	
 				alertDetailsString += '<br><select name="alert_attempt[call_down_response]" >' + 
 					'<option value="" SELECTED>Select your response...</option>';
 				for (var o in data[id].detail.response ){
@@ -123,12 +124,14 @@ $(document).ready(function() {
 				}	
 				alertDetailsString += '</select>';
 			}
-			alertDetailsString += '<a href="#alerts_pane" class="blueButton submit acknowledge">Acknowledge</a>' +
+			alertDetailsString += 
+				'<a href="#alerts_pane" class="blueButton submit acknowledge">Acknowledge</a>' +
 				'<input name="_method" type="hidden" value="put">' + 
 				'<input name="authenticity_token" type="hidden" value="/">' +
 				'</form>';
 		}
-		alertDetailsString += '</ul></li>';		
+		alertDetailsString += '</ul></li>';
+		
 		$('#alert_details').append(alertDetailsString);	
 	}	
 	
@@ -139,18 +142,17 @@ $(document).ready(function() {
 		   dataType: "json",
 		   url: DOMAIN + "/han.json",
 			 beforeSend: function(xhr) { xhr.setRequestHeader("Cookie", getCookie()); },
-		   success: function(data) {loadAlertsData(data);},
+		   success: function(data) {$('#progress').remove(); loadAlertsData(data);},
 		   error: function(xhr) {
 				switch (xhr.status) {
 					case   0: msg("Loss connect by Carrier, use Wi-Fi to Access Data."); break;
 					default:  msg("Network error. (code: people " + xhr.status + ")"); }
 				}
 		});
-		$('#progress').remove();
 	}
 
 	$("#alerts_preview").setTemplateElement("alerts_preview_template");
-	$("#alert_detail_sub").setTemplateElement("alerts_detail_template");
+	//$("#alert_detail_sub").setTemplateElement("alerts_detail_template");
 
 	function loadAlertsData(data) {
 		$('#alerts_preview').processTemplate(data);
@@ -161,10 +163,18 @@ $(document).ready(function() {
 		return false;
 	};
 
-	// People Search
+	// People Search			
 	
 	$("#people_roles_select").setTemplateElement("role_select_template");
 	$("#people_jurisdictions_select").setTemplateElement("jurisdiction_select_template");
+	
+	$('#people_search_pane').bind('pageAnimationStart', function(event, info){
+		//alert('people_search_pane: ' + info.direction);
+		if (info.direction == 'in') {
+    		fetchRoles(); 
+			fetchJurisdictions();
+		}
+	});
 
 	$('a#quicksearch').click(function(event) {
 		$.ajax({
@@ -181,15 +191,9 @@ $(document).ready(function() {
 					default: msg("Network error. (code: people " + xhr.status + ")");}
 				}
 		});
-		return false;
+		return false; 
 	});
-		
-	$('#people_search_pane').bind('pageAnimationStart', function(event, info){
-    if (info.direction == 'in') {
-			fetchRoles(); 
-			fetchJurisdictions();};
-	});
-	
+			
 	function fetchRoles() {
 		$.ajax({
 			type: "POST",
