@@ -1,11 +1,19 @@
-.header {color: blue !important; font-weight: normal; font-size: 17px !important;}
+.header {color: black !important; font-weight: bold; font-size: 20px !important; text-shadow: 1px 1px 1px #999;}
 
-ul.alerts li p.pair {font-weight: bold; color: black; font-size: 13px;}
-ul.alerts li p.pair span {float: right; margin-right: 20px; font-weight: normal; color: #666 !important;}
-ul.alerts li p.content {font-weight: normal; margin-top: 10px !important;}
+ul.alerts li p.pair {font-weight: normal; color: #444; font-size: 13px;}
+ul.alerts li p.pair span {float: right; margin-right: 20px; font-weight: bold; color: black !important;}
+ul.alerts li p.content {font-size: 18px; font-weight: normal; color: #222; margin-top: 10px !important;}
 .submit {color: white !important; text-align: center; margin: 10px 0px;}
 
 ul.people li p.pair {font-weight: bold; color: black; font-size: 13px;}
 ul.people li p.pair span {float: right; margin-right: 20px; font-weight: normal; color: #666 !important;}
 ul.people li p {font-weight: normal; font-size: 13px;}
 .talhoButton {color: white !important; text-align: center; margin: 10px 5px;}
+
+.contactLabel{
+	font: normal 14px Helvetica !important;
+}
+.contactValue{
+	color: #444 !important;
+	font: bold 20px Helvetica !important;
+}
