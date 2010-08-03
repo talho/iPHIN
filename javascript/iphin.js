@@ -62,6 +62,11 @@ function setJurisdictions(data) {
 // 	try {return JSON.parse(obj);} catch(e) {return new Object();};
 // }
 
+function msg(message) {
+	try {navigator.notification.alert(message,"TxPhin","OK");}
+	catch (e) {alert(message);}
+}
+
 $(document).ready(function() {
 	
 	if (typeof(PhoneGap) != 'undefined') {
@@ -84,9 +89,9 @@ $(document).ready(function() {
 			 },
 		   error: function(xhr) {
 					switch (xhr.status) {
-						case 401: alert("No user with this email and password."); break;
-						case 0:   alert("Loss connect by Carrier, use Wi-Fi to Access Data."); break;
-						default: alert("Network error. (code: signin " + xhr.status + ")");}
+						case 401: msg("No user with this email and password."); break;
+						case 0:   msg("Loss connect by Carrier, use Wi-Fi to Access Data."); break;
+						default: msg("Network error. (code: signin " + xhr.status + ")");}
 			 }
 		});
 		return false;
@@ -137,8 +142,8 @@ $(document).ready(function() {
 		   success: function(data) {loadAlertsData(data);},
 		   error: function(xhr) {
 				switch (xhr.status) {
-					case   0: alert("Loss connect by Carrier, use Wi-Fi to Access Data."); break;
-					default:  alert("Network error. (code: people " + xhr.status + ")"); }
+					case   0: msg("Loss connect by Carrier, use Wi-Fi to Access Data."); break;
+					default:  msg("Network error. (code: people " + xhr.status + ")"); }
 				}
 		});
 		$('#progress').remove();
@@ -171,9 +176,9 @@ $(document).ready(function() {
 		   success: function(data) {loadPeopleData(data);},
 		   error: function(xhr) {
 				switch (xhr.status) {
-					case 500: alert("Likely search engine problem. (code: 500)"); break;
-					case   0: alert("Loss connect by Carrier, use Wi-Fi to Access Data."); break;
-					default: alert("Network error. (code: people " + xhr.status + ")");}
+					case 500: msg("Likely search engine problem. (code: 500)"); break;
+					case   0: msg("Loss connect by Carrier, use Wi-Fi to Access Data."); break;
+					default: msg("Network error. (code: people " + xhr.status + ")");}
 				}
 		});
 		return false;
@@ -198,8 +203,8 @@ $(document).ready(function() {
 				$('#people_roles_select').processTemplate(getRoles());},
 			error: function(xhr) {
 				switch (xhr.status) {
-					case   0: alert("Loss connect by Carrier, use Wi-Fi to Access Data."); break;
-					default:  alert("Network error. (code: people " + xhr.status + ")");}
+					case   0: msg("Loss connect by Carrier, use Wi-Fi to Access Data."); break;
+					default:  msg("Network error. (code: people " + xhr.status + ")");}
 				}
 		});
 	}
@@ -217,8 +222,8 @@ $(document).ready(function() {
 				$('#people_jurisdictions_select').processTemplate(getJurisdictions());},
 			error: function(xhr) {
 				switch (xhr.status) {
-					case   0: alert("Loss connect by Carrier, use Wi-Fi to Access Data."); break;
-					default:  alert("Network error. (code: people " + xhr.status + ")");}
+					case   0: msg("Loss connect by Carrier, use Wi-Fi to Access Data."); break;
+					default:  msg("Network error. (code: people " + xhr.status + ")");}
 			}
 		});
 	}
@@ -243,22 +248,22 @@ $(document).ready(function() {
 			$("a#create_contact").click(function(event) {
 				// { 'firstName': 'Donna', 'lastName' : 'Hammer', 'phoneNumber': '555-3333' };
 				var new_contact = $('#new_contact_form').serializeObject();
-				//newContact(new_contact); // for test only
-				navigator.contacts.newContact(new_contact, addContact_Return);
+				newContact(new_contact,addContact_Return);
 			});
 			return false;
 		});
 	};
 
-	function addContact_Return(contact) {
-		if (contact) {
-			navigator.notification.alert(contact.firstName,contact.lastName, "Dismiss");
-		}
-	}
-
-	function newContact(contact) {
-		alert(contact.firstName+" "+contact.lastName+" "+contact.phoneNumber);
-	}
-
 });
+
+function newContact(contact,addContact_Return) {
+	try {navigator.contacts.newContact(new_contact, addContact_Return);}
+	catch(e) {alert(contact.firstName+" "+contact.lastName+" "+contact.phoneNumber);}
+}
+
+function addContact_Return(contact) {
+	if (contact) {
+		navigator.notification.alert(contact.firstName,contact.lastName, "Dismiss");
+	}
+}
 
