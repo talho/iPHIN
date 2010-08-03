@@ -76,15 +76,17 @@ $(document).ready(function() {
 		   data: $('#signin_form').serialize(),
 		   dataType: "json",
 		   url: DOMAIN + "/session.json",
+			 timeout: 1000,
+			cache: false,
 		   success: function(data) {
 				 setCookie(data);
 				 jQT.goTo($('#alerts_pane'), 'flip')
 			 },
 		   error: function(xhr) {
 					switch (xhr.status) {
-						case 401: alert("Unauthorized Access"); break;
-						case 0:   alert("Failed Sign in"); break;
-						default: alert("Server error");}
+						case 401: alert("No user with this email and password."); break;
+						case 0:   alert("Loss connect by Carrier, use Wi-Fi to Access Data."); break;
+						default: alert("Network error. (code: signin " + xhr.status + ")");}
 			 }
 		});
 		return false;
@@ -97,14 +99,20 @@ $(document).ready(function() {
 	});
 	
 	function fetchAlerts() {
+		$('#alerts_pane').append('<div id="progress">Loading...</div>');
 		$.ajax({
 		   type: "GET",
 		   dataType: "json",
 		   url: DOMAIN + "/han.json",
 			 beforeSend: function(xhr) { xhr.setRequestHeader("Cookie", getCookie()); },
 		   success: function(data) {loadAlertsData(data);},
-		   error: function(xhr,status) {alert(xhr.status);}
+		   error: function(xhr) {
+				switch (xhr.status) {
+					case   0: alert("Loss connect by Carrier, use Wi-Fi to Access Data."); break;
+					default:  alert("Network error. (code: people " + xhr.status + ")"); }
+				}
 		});
+		$('#progress').remove();
 	}
 
 	$("#alerts_preview").setTemplateElement("alerts_preview_template");
@@ -114,9 +122,7 @@ $(document).ready(function() {
 		$('#alerts_preview').processTemplate(data);
 		$("#alerts_preview li a").click(function(e) {
 			id = $(this).attr("alert_id")||0;
-			alert(data[id].header);
 			$('#alert_detail_sub').processTemplate(data[$(this).attr("alert_id")||0]);
-			jQT.goTo($('#alert_detail_pane'), 'slide');
 		});
 		return false;
 	};
@@ -136,8 +142,9 @@ $(document).ready(function() {
 		   success: function(data) {loadPeopleData(data);},
 		   error: function(xhr) {
 				switch (xhr.status) {
-					case 500: alert("Likely search engine problem"); break;
-					default: alert("Server error");}
+					case 500: alert("Likely search engine problem. (code: 500)"); break;
+					case   0: alert("Loss connect by Carrier, use Wi-Fi to Access Data."); break;
+					default: alert("Network error. (code: people " + xhr.status + ")");}
 				}
 		});
 		return false;
@@ -160,7 +167,11 @@ $(document).ready(function() {
 			success: function(data) {
 				setRoles(data);
 				$('#people_roles_select').processTemplate(getRoles());},
-			error: function(xhr,status) {alert(xhr.status);}
+			error: function(xhr) {
+				switch (xhr.status) {
+					case   0: alert("Loss connect by Carrier, use Wi-Fi to Access Data."); break;
+					default:  alert("Network error. (code: people " + xhr.status + ")");}
+				}
 		});
 	}
 
@@ -175,7 +186,11 @@ $(document).ready(function() {
 			success: function(data) {
 				setJurisdictions(data);
 				$('#people_jurisdictions_select').processTemplate(getJurisdictions());},
-			error: function(xhr,status) {alert(xhr.status);}
+			error: function(xhr) {
+				switch (xhr.status) {
+					case   0: alert("Loss connect by Carrier, use Wi-Fi to Access Data."); break;
+					default:  alert("Network error. (code: people " + xhr.status + ")");}
+			}
 		});
 	}
 
