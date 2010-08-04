@@ -13,57 +13,41 @@ var jQT = new $.jQTouch({
   ]
 });
 
+function _setSstore_(key,value) {try{sessionStorage[key] = value;} catch(e) {window[key] = value;}}
+function _getSstore_(key) {try{return sessionStorage[key]} catch(e) {return window[key] = value;}}
+
+function _setLstore_(key,value) {try{localStorage[key] = value;} catch(e) {window[key] = value;}}
+function _getLstore_(key) {try{return localStorage[key]} catch(e) {return window[key] = value;}}
+
 var DOMAIN = "http://localhost:3000"; /* "http://www.txphin.org" release */
 
-try { localStorage.trail = ""; lstore = localStorage;}
-catch(e) { lstore = window; }
+function setCookie(data) {_setSstore_("_cookie",data.cookie);}
+function getCookie() {return _getSstore_("_cookie");}
 
-function setCookie(data) {window._cookie = data.cookie;}
-function getCookie() {return window._cookie;}
+function setAlertDetail(data) {_setLstore_("alertDetail",data);}
+function getAlertDetail() {return _getLstore_("alertDetail");}
 
-function setAlertDetail(data) {window.alertDetail = data;}
-function getAlertDetail() {return window.alertDetail;}
+function setRolesAge(age) {_setLstore_("rolesAge",age);}
+function getRolesAge() {return _getLstore_("rolesAge")||0 ;}
 
-// function setRolesAge(age) {localStorage.rolesAge = age;}
-// function getRolesAge() {return (localStorage.rolesAge||0);}
-
-function setRolesAge(age) {window.rolesAge = age;}
-function getRolesAge() {return (window.rolesAge||0);}
-
-//function getRoles() {return window.roles = (window.roles || (safariParse(localStorage.roles)).roles ||[]);}
-function getRoles() {return window.roles = (window.roles||[]);}
+function getRoles() {return _getLstore_("roles")||[];}
 function setRoles(data) {
 	if (getRolesAge() < data.latest_in_secs) {
-	// if ((getRolesAge() < data.latest_in_secs) || (window.roles && window.roles.length<1)) {
-		window.roles = data.roles;
-		// localStorage.roles = JSON.stringify(data);
-		// alert(localStorage.roles.substring(0,30));
+		_setLstore_("roles",data.roles);
 		setRolesAge(data.latest_in_secs);
 	}
 }
 
-// function setJurisdictionsAge(age) {localStorage.jurisdictionsAge = age;}
-// function getJurisdictionsAge() {return (localStorage.jurisdictionsAge||0);}
-function setJurisdictionsAge(age) {window.jurisdictionsAge = age;}
-function getJurisdictionsAge() {return (window.jurisdictionsAge||0);}
+function setJurisdictionsAge(age) {_setLstore_("jurisdictionsAge",age);}
+function getJurisdictionsAge() {return _getLstore_("jurisdictionsAge")||0 ;}
 
-//function getJurisdictions() {return window.jurisdictions = (window.jurisdictions || (safariParse(localStorage.jurisdictions)).jurisdictions ||[]);}
-function getJurisdictions() {return window.jurisdictions = (window.jurisdictions || []);}
+function getJurisdictions() {return _getLstore_("jurisdictions")||[];}
 function setJurisdictions(data) {
 	if (getJurisdictionsAge() < data.latest_in_secs) {
-		// if ((getJurisdictionsAge() < data.latest_in_secs) || (window.jurisdictions && window.jurisdictions.length<1)) {
-		window.jurisdictions = data.jurisdictions;
-		// localStorage.jurisdictions = JSON.stringify(data);
-		// alert(localStorage.jurisdictions.substring(0,30));
+		_setLstore_("jurisdictions",data.jurisdictions);
 		setJurisdictionsAge(data.latest_in_secs);
 	}
 }
-
-// function safariParse(obj) {
-// 	if (!obj) {return new Object();};
-// 	alert(obj.substring(0,30));
-// 	try {return JSON.parse(obj);} catch(e) {return new Object();};
-// }
 
 function msg(message) {
 	try {navigator.notification.alert(message,"TxPhin","OK");}
