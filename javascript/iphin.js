@@ -203,8 +203,10 @@ $(document).ready(function() {
 	$('a#quicksearch').click(function(event) {
 		//////// silently add a wildcard (*) to the end of names
 		searchDataObject = $('#people_search_form').serializeObject(); 
-		searchDataObject.first_name += '*';
-		searchDataObject.last_name += '*'; 
+		var reWild = /[^\*]$/;  /// returns true is there is no trailing wildcard
+		//////// don't want to double up the wildcard
+		if (searchDataObject.first_name.match(reWild)){ searchDataObject.first_name += '*'; } 
+		if (searchDataObject.last_name.match(reWild)){ searchDataObject.last_name += '*'; } 
 		searchData = $.param(searchDataObject);		//convert back to URLencoded string
 		showMessageBox('loadingsearch', '#people_search_form');
 		$.ajax({
