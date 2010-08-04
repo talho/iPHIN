@@ -9,7 +9,7 @@ var jQT = new $.jQTouch({
     'jqtouch/themes/jqt/img/button_clicked.png',
     'jqtouch/themes/jqt/img/grayButton.png',
     'jqtouch/themes/jqt/img/whiteButton.png',
-    'jqtouch/themes/jqt/img/loading.gif'
+    'images/loading.gif'
   ]
 });
 
@@ -70,6 +70,29 @@ function msg(message) {
 	catch (e) {alert(message);}
 }
 
+function showMessageBox(command, element){  //prepends a string in a box at the top of the named element.  
+	var userMessage = '';
+	switch(command){
+		case 'loadingalerts':
+			userMessage = '<li id="messageBox" id="progress"><img src="images/loading.gif"> Loading latest alerts...</li>';
+		break;
+		case 'loadingsearch':
+			userMessage = '<li id="messageBox" id="progress"><img src="images/loading.gif"> Searching...</li>';
+		break;
+		case 'auth':
+			userMessage = '<li id="messageBox" id="progress"><img src="images/loading.gif"> Authenticating...</li>';
+		break;
+		case 'neterror':
+			userMessage = '<li id="messageBox" id="progress">Could not connect to server.</li>';
+		break;
+	}
+	$(element).prepend(userMessage); 
+}
+
+function hideMessageBox(){
+	$('#messageBox').remove();
+}
+
 $(document).ready(function() {
 	
 	if (typeof(PhoneGap) != 'undefined') {
@@ -79,23 +102,27 @@ $(document).ready(function() {
 	// SignIn 
 	
 	$('a#signin').click(function(event) {
+		showMessageBox('auth', '#signin_fields');
 		$.ajax({
 		   type: "POST",
 		   data: $('#signin_form').serialize(),
 		   dataType: "json",
 		   url: DOMAIN + "/session.json",
-			//timeout: 1000,
-			//cache: false,
+			//timeout: 10000,
+			cache: false,
 		   success: function(data) {
+		   	 hideMessageBox();
 				 setCookie(data);
 				 jQT.goTo($('#alerts_pane'), 'flip')
 			 },
 		   error: function(xhr) {
-					switch (xhr.status) {
-						case 401: msg("No user with this email and password."); break;
-						case 0:   msg("Loss connect by Carrier, use Wi-Fi to Access Data."); break;
-						default: msg("Network error. (code: signin " + xhr.status + ")");}
-			 }
+		   	hideMessageBox();
+				switch (xhr.status) {
+					case 401: msg("No user with this email and password."); break;
+					case 0:   msg("Loss connect by Carrier, use Wi-Fi to Access Data."); break;
+					default: msg("Network error. (code: signin " + xhr.status + ")");
+				}
+			}
 		});
 		return false;
 	});
@@ -114,18 +141,20 @@ $(document).ready(function() {
 			data[id].detail.pair[p].key + '<span>' + 
 			data[id].detail.pair[p].value + '</span></p>';
 		}
-		if (data[id].detail.content && data[id].detail.content.length > 0) { 
-			alertDetailsString += '<p class="content" id="alertDetailContent">' + data[id].detail.content + '</p>';	 	 
+	
+		if (data[id].content && data[id].content.length > 0) { 
+			alertDetailsString += '<p class="content" id="alertDetailContent">' + data[id].content + '</p>';	 	 
 		}
 		///////////if this alert requires acknowledgement
-		if (data[id].detail.path && data[id].detail.path.length > 0) {  
-			alertDetailsString += '<form id="alert_ack_form" action=' + data[id].detail.path + ' method="post" >';
+		
+		if (data[id].path && data[id].path.length > 0) {  
+			alertDetailsString += '<form id="alert_ack_form" action=' + data[id].path + ' method="post" >';
 			////////////if this is an 'advanced' acknowledgement
-			if (data[id].detail.response != null) {	
+			if (data[id].response != null) {	
 				alertDetailsString += '<br><select name="alert_attempt[call_down_response]" >' + 
 					'<option value="" SELECTED>Select your response...</option>';
-				for (var o in data[id].detail.response ){
-					alertDetailsString += ' <option value="' + o + '">' + data[id].detail.response[o] + '</option>';
+				for (var o in data[id].response ){
+					alertDetailsString += ' <option value="' + o + '">' + data[id].response[o] + '</option>';
 				}	
 				alertDetailsString += '</select>';
 			}
@@ -141,18 +170,23 @@ $(document).ready(function() {
 	}	
 	
 	function fetchAlerts() {
-		$('#alerts_preview').prepend('<li id="progress">Loading latest alerts...</li>');
+		showMessageBox('loadingalerts', '#alerts_preview');
 		$.ajax({
 		   type: "GET",
 		   dataType: "json",
 		   url: DOMAIN + "/han.json",
 			 beforeSend: function(xhr) { xhr.setRequestHeader("Cookie", getCookie()); },
-		   success: function(data) {$('#progress').remove(); loadAlertsData(data);},
+		   success: function(data) {
+		   	hideMessageBox(); 
+		   	loadAlertsData(data);
+		   	},
 		   error: function(xhr) {
+		   	hideMessageBox();
 				switch (xhr.status) {
 					case   0: msg("Loss connect by Carrier, use Wi-Fi to Access Data."); break;
-					default:  msg("Network error. (code: people " + xhr.status + ")"); }
+					default:  msg("Network error. (code: people " + xhr.status + ")"); 
 				}
+			}
 		});
 	}
 
@@ -165,6 +199,7 @@ $(document).ready(function() {
 			var id = $(this).attr("alert_id")||0;	//
 			populateAlertPane(data,id);  //fill the detail pane with data 
 		});
+		hideMessageBox();
 		return false;
 	};
 
@@ -182,27 +217,33 @@ $(document).ready(function() {
 	});
 
 	$('a#quicksearch').click(function(event) {
-		searchData = $('#people_search_form').serializeArray();
-		alert (searchData.toString() );
-		alert (searchData);
+		//searchData = $('#people_search_form').serializeArray();
+		//alert (searchData.toString() );
+		showMessageBox('loadingsearch', '#people_search_form');
 		$.ajax({
 		   type: "POST",
 		   data: $('#people_search_form').serialize() ,
 		   dataType: "json",
 		   url: DOMAIN + "/search/show_advanced.json",
 			 beforeSend: function(xhr) { xhr.setRequestHeader("Cookie", getCookie()); },
-		   success: function(data) {loadPeopleData(data);},
+		   success: function(data) {
+		   	hideMessageBox(); 
+		   	loadPeopleData(data);
+		   },
 		   error: function(xhr) {
+		   	hideMessageBox();
 				switch (xhr.status) {
 					case 500: msg("Likely search engine problem. (code: 500)"); break;
 					case   0: msg("Loss connect by Carrier, use Wi-Fi to Access Data."); break;
-					default: msg("Network error. (code: people " + xhr.status + ")");}
+					default: msg("Network error. (code: people " + xhr.status + ")");
 				}
+			}
 		});
 		return false; 
 	});
 			
 	function fetchRoles() {
+		$('#people_roles_select').empty();
 		$('#people_roles_select').append('<p id="progress">Loading roles...</p>');
 		dataRequest = '{"request":{"method": "user_roles","only":["id","name"],"age": ' + getRolesAge() + '}}';
 		$.ajax({
@@ -213,17 +254,21 @@ $(document).ready(function() {
 			url: "http://localhost:3000/roles/mapping.json",
 			beforeSend: function(xhr) { xhr.setRequestHeader("Cookie", getCookie()); },
 			success: function(data) {
+				hideMessageBox();
 				setRoles(data);
 				$('#people_roles_select').processTemplate(getRoles());},
 			error: function(xhr) {
+				hideMessageBox();
 				switch (xhr.status) {
 					case   0: msg("Loss connect by Carrier, use Wi-Fi to Access Data."); break;
 					default:  msg("Network error. (code: people " + xhr.status + ")");}
 				}
+
 		});
 	}
 
 	function fetchJurisdictions() {
+		$('#people_jurisdictions_select').empty();
 		$('#people_jurisdictions_select').append('<p id="progress">Loading jurisdictions...</p>');
 		dataRequest = '{"request":{"method": "nonroot","only":["id","name"],"age": ' + getJurisdictionsAge() + '}}';
 		$.ajax({
@@ -234,12 +279,15 @@ $(document).ready(function() {
 			url: "http://localhost:3000/jurisdictions/mapping.json",
 			beforeSend: function(xhr) { xhr.setRequestHeader("Cookie", getCookie()); },
 			success: function(data) {
+				hideMessageBox();
 				setJurisdictions(data);
 				$('#people_jurisdictions_select').processTemplate(getJurisdictions());},
 			error: function(xhr) {
+				hideMessageBox();
 				switch (xhr.status) {
 					case   0: msg("Loss connect by Carrier, use Wi-Fi to Access Data."); break;
-					default:  msg("Network error. (code: people " + xhr.status + ")");}
+					default:  msg("Network error. (code: people " + xhr.status + ")");
+				}
 			}
 		});
 	}

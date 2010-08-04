@@ -1,4 +1,4 @@
-.header {color: black !important; font-weight: bold; font-size: 20px !important; text-shadow: 1px 1px 1px #999;}
+.header {color: #0000aa !important; font-weight: bold; font-size: 20px !important; text-shadow: 1px 1px 1px #999;}
 
 ul.alerts li p.pair {font-weight: normal; color: #444; font-size: 13px;}
 ul.alerts li p.pair span {float: right; margin-right: 20px; font-weight: bold; color: black !important;}
