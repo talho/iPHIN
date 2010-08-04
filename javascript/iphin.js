@@ -136,7 +136,7 @@ $(document).ready(function() {
 	}	
 	
 	function fetchAlerts() {
-		$('#alerts_pane').append('<div id="progress">Loading...</div>');
+		$('#alerts_preview').append('<li id="progress">Loading latest alerts...</li>');
 		$.ajax({
 		   type: "GET",
 		   dataType: "json",
@@ -177,9 +177,12 @@ $(document).ready(function() {
 	});
 
 	$('a#quicksearch').click(function(event) {
+		searchData = $('#people_search_form').serializeArray();
+		alert (searchData.toString() );
+		alert (searchData);
 		$.ajax({
 		   type: "POST",
-		   data: $('#people_search_form').serialize(),
+		   data: $('#people_search_form').serialize() ,
 		   dataType: "json",
 		   url: DOMAIN + "/search/show_advanced.json",
 			 beforeSend: function(xhr) { xhr.setRequestHeader("Cookie", getCookie()); },
@@ -195,9 +198,11 @@ $(document).ready(function() {
 	});
 			
 	function fetchRoles() {
+		$('#people_roles_select').append('<p id="progress">Loading roles...</p>');
+		dataRequest = '{"request":{"method": "user_roles","only":["id","name"],"age": ' + getRolesAge() + '}}';
 		$.ajax({
 			type: "POST",
-			data: '{"request":{"method": "user_roles","only":["id","name"],"age": ' + getRolesAge() + '}}',
+			data: dataRequest , 
 			contentType: "application/json",
 			dataType: "json",
 			url: "http://localhost:3000/roles/mapping.json",
@@ -214,9 +219,11 @@ $(document).ready(function() {
 	}
 
 	function fetchJurisdictions() {
+		$('#people_jurisdictions_select').append('<p id="progress">Loading jurisdictions...</p>');
+		dataRequest = '{"request":{"method": "nonroot","only":["id","name"],"age": ' + getJurisdictionsAge() + '}}';
 		$.ajax({
 			type: "POST",
-			data: '{"request":{"method": "nonroot","only":["id","name"],"age": ' + getJurisdictionsAge() + '}}',
+			data: dataRequest ,
 			contentType: "application/json",
 			dataType: "json",
 			url: "http://localhost:3000/jurisdictions/mapping.json",
