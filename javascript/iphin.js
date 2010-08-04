@@ -14,10 +14,10 @@ var jQT = new $.jQTouch({
 });
 
 function _setSstore_(key,value) {try{sessionStorage[key] = value;} catch(e) {window[key] = value;}}
-function _getSstore_(key) {try{return sessionStorage[key]} catch(e) {return window[key] = value;}}
+function _getSstore_(key) {try{return sessionStorage[key]} catch(e) {return window[key];}}
 
 function _setLstore_(key,value) {try{localStorage[key] = value;} catch(e) {window[key] = value;}}
-function _getLstore_(key) {try{return localStorage[key]} catch(e) {return window[key] = value;}}
+function _getLstore_(key) {try{return localStorage[key]} catch(e) {return window[key];}}
 
 var DOMAIN = "http://localhost:3000"; /* "http://www.txphin.org" release */
 
