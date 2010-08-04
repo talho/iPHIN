@@ -127,7 +127,7 @@ $(document).ready(function() {
 		}
 	
 		if (data[id].detail.content && data[id].detail.content.length > 0) { 
-			alertDetailsString += '<p class="content" id="alertDetailContent">' + data[id].detail.content + '</p>';	 	 
+			alertDetailsString += '<p class="content" id="alertDetailContent">' + decodeURI(data[id].detail.content) + '</p>';	 	 
 		}
 		///////////if this alert requires acknowledgement
 		
