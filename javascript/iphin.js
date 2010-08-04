@@ -201,12 +201,15 @@ $(document).ready(function() {
 	});
 
 	$('a#quicksearch').click(function(event) {
-		//searchData = $('#people_search_form').serializeArray();
-		//alert (searchData.toString() );
+		//////// silently add a wildcard (*) to the end of names
+		searchDataObject = $('#people_search_form').serializeObject(); 
+		searchDataObject.first_name += '*';
+		searchDataObject.last_name += '*'; 
+		searchData = $.param(searchDataObject);		//convert back to URLencoded string
 		showMessageBox('loadingsearch', '#people_search_form');
 		$.ajax({
 		   type: "POST",
-		   data: $('#people_search_form').serialize() ,
+		   data: searchData,
 		   dataType: "json",
 		   url: DOMAIN + "/search/show_advanced.json",
 			 beforeSend: function(xhr) { xhr.setRequestHeader("Cookie", getCookie()); },
