@@ -126,19 +126,19 @@ $(document).ready(function() {
 			data[id].detail.pair[p].value + '</span></p>';
 		}
 	
-		if (data[id].content && data[id].content.length > 0) { 
-			alertDetailsString += '<p class="content" id="alertDetailContent">' + data[id].content + '</p>';	 	 
+		if (data[id].detail.content && data[id].detail.content.length > 0) { 
+			alertDetailsString += '<p class="content" id="alertDetailContent">' + data[id].detail.content + '</p>';	 	 
 		}
 		///////////if this alert requires acknowledgement
 		
-		if (data[id].path && data[id].path.length > 0) {  
-			alertDetailsString += '<form id="alert_ack_form" action=' + data[id].path + ' method="post" >';
+		if (data[id].detail.path && data[id].detail.path.length > 0) {  
+			alertDetailsString += '<form id="alert_ack_form" action=' + data[id].detail.path + ' method="post" >';
 			////////////if this is an 'advanced' acknowledgement
-			if (data[id].response != null) {	
+			if (data[id].detail.response != null) {	
 				alertDetailsString += '<br><select name="alert_attempt[call_down_response]" >' + 
 					'<option value="" SELECTED>Select your response...</option>';
-				for (var o in data[id].response ){
-					alertDetailsString += ' <option value="' + o + '">' + data[id].response[o] + '</option>';
+				for (var o in data[id].detail.response ){
+					alertDetailsString += ' <option value="' + o + '">' + data[id].detail.response[o] + '</option>';
 				}	
 				alertDetailsString += '</select>';
 			}
