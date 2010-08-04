@@ -15,6 +15,9 @@ var jQT = new $.jQTouch({
 
 var DOMAIN = "http://localhost:3000"; /* "http://www.txphin.org" release */
 
+try { localStorage.trail = ""; lstore = localStorage;}
+catch(e) { lstore = window; }
+
 function setCookie(data) {window._cookie = data.cookie;}
 function getCookie() {return window._cookie;}
 
@@ -111,9 +114,11 @@ $(document).ready(function() {
 			data[id].detail.pair[p].key + '<span>' + 
 			data[id].detail.pair[p].value + '</span></p>';
 		}
-		alertDetailsString += '<p class="content" id="alertDetailContent">' + data[id].detail.content + '</p>';	 	 
+		if (data[id].detail.content && data[id].detail.content.length > 0) { 
+			alertDetailsString += '<p class="content" id="alertDetailContent">' + data[id].detail.content + '</p>';	 	 
+		}
 		///////////if this alert requires acknowledgement
-		if (data[id].detail.path.length > 0) {  
+		if (data[id].detail.path && data[id].detail.path.length > 0) {  
 			alertDetailsString += '<form id="alert_ack_form" action=' + data[id].detail.path + ' method="post" >';
 			////////////if this is an 'advanced' acknowledgement
 			if (data[id].detail.response != null) {	
@@ -136,7 +141,7 @@ $(document).ready(function() {
 	}	
 	
 	function fetchAlerts() {
-		$('#alerts_preview').append('<li id="progress">Loading latest alerts...</li>');
+		$('#alerts_preview').prepend('<li id="progress">Loading latest alerts...</li>');
 		$.ajax({
 		   type: "GET",
 		   dataType: "json",
