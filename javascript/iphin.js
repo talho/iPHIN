@@ -237,7 +237,7 @@ $(document).ready(function() {
 			error: function(xhr) {
 				hideMessageBox();
 				switch (xhr.status) {
-					case   0: msg("Loss connect by Carrier, use Wi-Fi to Access Data."); break;
+//					case   0: msg("Loss connect by Carrier, use Wi-Fi to Access Data."); break;
 					default:  msg("Network error. (code: people " + xhr.status + ")");}
 				}
 
@@ -262,7 +262,7 @@ $(document).ready(function() {
 			error: function(xhr) {
 				hideMessageBox();
 				switch (xhr.status) {
-					case   0: msg("Loss connect by Carrier, use Wi-Fi to Access Data."); break;
+//					case   0: msg("Loss connect by Carrier, use Wi-Fi to Access Data."); break;
 					default:  msg("Network error. (code: people " + xhr.status + ")");
 				}
 			}
