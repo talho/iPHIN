@@ -103,7 +103,7 @@ $(document).ready(function() {
 		   	//$('#signin').show();
 				switch (xhr.status) {
 					case 401: msg("No user with this email and password."); break;
-					case 0:   msg("Loss connect by Carrier, use Wi-Fi to Access Data."); break;
+					case 0:   msg("No user with this email and password."); break;
 					default: msg("Network error. (code: signin " + xhr.status + ")");
 				}
 			}
@@ -349,7 +349,7 @@ function newContact(contact,addContact_Return) {
 
 function addContact_Return(contact) {
 	if (contact) {
-		navigator.notification.alert(contact.firstName,contact.lastName, "Dismiss");
+		navigator.notification.alert(contact.firstName+" "+contact.lastName,"Created Contact", "OK");
 	}
 }
 
