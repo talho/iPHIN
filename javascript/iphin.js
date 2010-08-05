@@ -343,7 +343,7 @@ $(document).ready(function() {
 });
 
 function newContact(contact,addContact_Return) {
-	try {navigator.contacts.newContact(new_contact, addContact_Return);}
+	try {navigator.contacts.newContact(contact, addContact_Return);}
 	catch(e) {alert(contact.firstName+" "+contact.lastName+" "+contact.phoneNumber);}
 }
 
