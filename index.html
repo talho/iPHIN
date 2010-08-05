@@ -92,27 +92,33 @@
             <li>
               <div id="people_roles_select"></div>
             </li>
-            <li><a id="quicksearch" class="blueButton submit">Search</a></li>  
+            <li><a id="quicksearch" class="blueButton submit swap" href="#people_pane">Search</a></li>  
         </form>
     </ul>
     </div>
     
-    <!-- People pane -->
+    <!-- People pane -->    
     
     <div id="people_pane">
     	<div class="toolbar">
     		<h1>People</h1>
     		<a class="back">Search</a>
   		</div>
-  		<div id="people_results_pane">
+  		<div id="people_results">
   		</div>
     </div>
     
     <!-- New Contact Pane -->
 
-    <div id="new_contact_pane" >
+	<div id="new_contact_pane">
+      <div class="toolbar">
+        <a href="#" class="button back"  >Back</a>
+        <h1>New Contact</h1>
+      </div>
+      <div id="new_contact">
+      </div>
     </div>
-    
+
   </body>
 </html>
 
@@ -123,6 +129,8 @@
 <!-- alert_detail_template no longer exists. --> 
  
 <!-- people_results_template no longer exists -->
+
+<!-- new_contact_template no longer exists -->
 
 <p style="display:none"><textarea id="role_select_template" rows="0" cols="0"><!--
   <select name="[role_ids][]" multiple="multiple">
@@ -147,22 +155,3 @@
     <option value={$T.option.id}>{$T.option.name}</option>
   {#/for}
 --></textarea></p> 
-
-<p style="display:none"><textarea id="new_contact_template" rows="0" cols="0"><!--
-  <div class="toolbar">
-    <h1>New Contact</h1>
-    <a href="#" class="button back"  >Back</a>
-  </div>
-  <ul class="rounded">
-    <form id="new_contact_form" action="#" method="post" accept-charset="utf-8">
-      {#foreach $T.contact as input}
-        <li>
-          <p class="contactLabel"><label for={$T.input.name}>{$T.input.label}</label></p>
-          <p><input class="contactValue" name={$T.input.name} type="text" value={$T.input.value} ></p>
-        </li>
-      {#/for}
-      <li><a id="create_contact" href="#people_pane" class="blueButton submit">Create</a></li>  
-    </form>
-  </ul>
---></textarea></p>
-

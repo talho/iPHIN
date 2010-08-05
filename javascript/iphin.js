@@ -52,19 +52,23 @@ function msg(message) {
 }
 
 function showMessageBox(command, element){  //prepends a string in a box at the top of the named element.  
+	hideMessageBox(); 
 	var userMessage = '';
 	switch(command){
 		case 'loadingalerts':
-			userMessage = '<li id="messageBox" id="progress"><img src="images/loading.gif"> Loading latest alerts...</li>';
+			userMessage = '<li id="messageBox"><img src="images/loading.gif"> Loading latest alerts...</li>';
 		break;
 		case 'loadingsearch':
-			userMessage = '<li id="messageBox" id="progress"><img src="images/loading.gif"> Searching...</li>';
+			userMessage = '<ul id="messageBox"><li><img src="images/loading.gif"> Searching...</li></ul>';
+		break;
+		case 'nosearch':
+			userMessage = '<ul id="messageBox"><li>No results.  Click Search to try again.</li></ul>';
 		break;
 		case 'auth':
-			userMessage = '<li id="messageBox" id="progress"><img src="images/loading.gif"> Authenticating...</li>';
+			userMessage = '<li id="messageBox"><img src="images/loading.gif"> Authenticating...</li>';
 		break;
 		case 'neterror':
-			userMessage = '<li id="messageBox" id="progress">Could not connect to server.</li>';
+			userMessage = '<li id="messageBox">Could not connect to server.</li>';
 		break;
 	}
 	$(element).prepend(userMessage); 
@@ -190,11 +194,8 @@ $(document).ready(function() {
 			}
 		});
 	}
-
-	//$("#alerts_preview").setTemplateElement("alerts_preview_template");
 	
 	function loadAlertsData(data) {
-		//$('#alerts_preview').processTemplate(data);
 		populateAlertsPreviewPane(data); // stuff data into main alerts page
 		$("#alerts_preview li a").click(function(e) {		
 			var id = $(this).attr("alert_id")||0;	//
@@ -210,43 +211,13 @@ $(document).ready(function() {
 	$("#people_jurisdictions_select").setTemplateElement("jurisdiction_select_template");
 	
 	$('#people_search_pane').bind('pageAnimationStart', function(event, info){
-		//alert('people_search_pane: ' + info.direction);
 		if (info.direction == 'in') {
     		fetchRoles(); 
 			fetchJurisdictions();
 		}
 	});
 
-	$('a#quicksearch').click(function(event) {
-		//////// silently add a wildcard (*) to the end of names
-		searchDataObject = $('#people_search_form').serializeObject(); 
-		var reWild = /[^\*]$/;  /// returns true is there is no trailing wildcard
-		//////// don't want to double up the wildcard
-		if (searchDataObject.first_name.match(reWild)){ searchDataObject.first_name += '*'; } 
-		if (searchDataObject.last_name.match(reWild)){ searchDataObject.last_name += '*'; } 
-		searchData = $.param(searchDataObject);		//convert back to URLencoded string
-		showMessageBox('loadingsearch', '#people_search_form');
-		$.ajax({
-		   type: "POST",
-		   data: searchData,
-		   dataType: "json",
-		   url: DOMAIN + "/search/show_advanced.json",
-			 beforeSend: function(xhr) { xhr.setRequestHeader("Cookie", getCookie()); },
-		   success: function(data) {
-		   	hideMessageBox(); 
-		   	loadPeopleData(data);
-		   },
-		   error: function(xhr) {
-		   	hideMessageBox();
-				switch (xhr.status) {
-					case 500: msg("Likely search engine problem. (code: 500)"); break;
-					case   0: msg("Loss connect by Carrier, use Wi-Fi to Access Data."); break;
-					default: msg("Network error. (code: people " + xhr.status + ")");
-				}
-			}
-		});
-		return false; 
-	});
+	
 			
 	function fetchRoles() {
 		$('#people_roles_select').empty();
@@ -297,50 +268,108 @@ $(document).ready(function() {
 			}
 		});
 	}
-
-	$("#new_contact_pane").setTemplateElement("new_contact_template");
-
-	function populatePeopleResultsPane(data){
-		$('#people_results_pane').empty();	
-		for (var d in data){
-			personResultString = 
-				'<ul id="people" class="people edgetoedge"><li class="person arrow">' + 
-				'<a href="#new_contact_pane" contact_id="'+ d + '">';
-			if (data[d].header && data[d].header.length > 0){  ////contact name 
-				personResultString += '<p class="header">' + data[d].header + '</p>';  
-			} 
-			for (var p in data[d].preview.pair){
-				personResultString += '<p>' + data[d].preview.pair[p].key + '</p>';
-			}
-			personResultString += '</a></li></ul>';
+	
+	$('#people_pane').bind('pageAnimationStart', function(event, info){
+		if (info.direction == 'in') {
+			if(!$("#people_pane").data('loaded')) {   //don't hit the server again if there are already current search results 
+				$('#people_results').empty();
+    			makeSearchRequest();
+    		}
+    		$('#people_pane').data('loaded', false);
 		}
-		$('#people_results_pane').append(personResultString );
-	}
+	});
+	
+	$('#new_contact_pane').bind('pageAnimationStart', function(event, info){
+		if (info.direction == 'in') {
+    		$('#people_pane').data('loaded', true);  
+    	}
+	});
+	
+	// takes the contents of #people_search_form, gets results form the server, and fires the populate function on success 
+	function makeSearchRequest(){  
+		showMessageBox('loadingsearch', '#people_results');
+		//////// silently add a wildcard (*) to the end of names
+		searchDataObject = $('#people_search_form').serializeObject(); 
+		var reWild = /[^\*]$/;  /// returns true is there is no trailing wildcard
+		//////// don't want to double up the wildcard
+		if (searchDataObject.first_name.match(reWild)){ searchDataObject.first_name += '*'; } 
+		if (searchDataObject.last_name.match(reWild)){ searchDataObject.last_name += '*'; } 
+		searchData = $.param(searchDataObject);		//convert back to URLencoded string
+		$.ajax({
+		   type: "POST",
+		   data: searchData,
+		   dataType: "json",
+		   url: DOMAIN + "/search/show_advanced.json",
+			 beforeSend: function(xhr) { xhr.setRequestHeader("Cookie", getCookie()); },
+		   success: function(data) { 
+		   	loadPeopleData(data);
+		   },
+		   error: function(xhr) {
+		   	hideMessageBox();
+				switch (xhr.status) {
+					case 500: msg("Likely search engine problem. (code: 500)"); break;
+					case   0: msg("Loss connect by Carrier, use Wi-Fi to Access Data."); break;
+					default: msg("Network error. (code: people " + xhr.status + ")");
+				}
+			}
+		});//end $.ajax	 
+	}	
 
 	function loadPeopleData(data) {
-		populatePeopleResultsPane(data);
-		jQT.goTo($('#people_pane'), 'slide');
-		// build the handler to get to the target
-		$("#people_pane li a").click(function(e) {
-			var id = $(this).attr("contact_id")||0;
-			var name = data[id].header.split(" ");
-			var contact = {contact: [
-				{name:"firstName",label:"First Name",value:name[0]},
-				{name:"lastName",label:"Last Name",value:name[1]},
-				{name:"phoneNumber",label:"Phone",value:"555-555-5555"}]};
-			$('#new_contact_pane').processTemplate(contact);
-			jQT.goTo($('#new_contact_pane'), 'slide');
-			// build handler to create new contact 
-			$("a#create_contact").click(function(event) {
-				// { 'firstName': 'Donna', 'lastName' : 'Hammer', 'phoneNumber': '555-3333' };
-				var new_contact = $('#new_contact_form').serializeObject();
-				newContact(new_contact,addContact_Return);
-			});
-			return false;
+		populatePeopleResultsPane(data);		
+		$("#people_results li a").click(function(e) {		
+			var id = $(this).attr("contact_id")||0;	 	//grab the id of clicked contact 
+			populateNewContactPane(data, id);  		//fill the detail pane with data 
 		});
 	};
 
-});
+	function populatePeopleResultsPane(data){	
+		if(data.length > 0){
+			for (var d in data){
+				var personResultString = 
+					'<ul id="people" class="people edgetoedge"><li class="person arrow">' + 
+					'<a href="#new_contact_pane" class="swap" contact_id="'+ d + '">'; // **THIS BREAKS BADLY WITHOUT CLASS="SWAP".  NO, I DON'T KNOW WHY***
+				if (data[d].header && data[d].header.length > 0){  						////contact name 
+					personResultString += '<p class="header">' + data[d].header + '</p>';  
+				} 
+				for (var p in data[d].preview.pair){
+					if (data[d].preview.pair[p].key){
+						personResultString += '<p>' + data[d].preview.pair[p].key + '</p>';
+					}
+				}
+				personResultString += '</a></li></ul>';
+				$('#people_results').append(personResultString );
+				hideMessageBox();
+			} 
+		} else {
+			showMessageBox('nosearch', '#people_results');	
+		}
+		
+	}
+
+	function populateNewContactPane(data, id){	
+		contactPaneString = '<ul class="rounded"><form id="new_contact_form" action="#" method="post" accept-charset="utf-8">';
+		var name = data[id].header.split(" ");
+		var firstName = name[0];
+		var lastName = name[name.length -1];
+		contactPaneString += '<li><p class="contactLabel" <label for="firstName">First Name</label></p>';	
+		contactPaneString += '<p><input class="contactValue" name="firstName" type="text" value="' + firstName + '"></p></li>';
+		contactPaneString += '<li><p class="contactLabel" <label for="lastName">Last Name</label></p>';	
+		contactPaneString += '<p><input class="contactValue" name="lastName" type="text" value="' + lastName + '"></p></li>';
+		contactPaneString += '<li><p class="contactLabel" <label for="phoneNumber">Phone Number</label></p>';
+		var phoneNumberString = ' value="" placeholder="[not available]" ';
+		for (var p in data[id].phone){
+			if ( data[id].phone[p].officePhone && data[id].phone[p].officePhone.length > 0 ){
+				phoneNumberString = ' value="' + data[id].phone[p].officePhone + '" ';
+			}
+		}
+		contactPaneString += '<p><input class="contactValue" name="phoneNumber" type="text" ' + phoneNumberString + ' ></p></li>';
+		contactPaneString += '<li><a id="create_contact" href="#people_pane" class="blueButton submit">Create</a></li></form></ul>';	
+		$('#new_contact').empty();
+		$('#new_contact').append(contactPaneString ); 		
+	}
+	
+}); // end document.ready 
 
 function newContact(contact,addContact_Return) {
 	try {navigator.contacts.newContact(contact, addContact_Return);}
