@@ -17,3 +17,10 @@ ul.people li p {font-weight: normal; font-size: 13px;}
 	color: #444 !important;
 	font: bold 20px Helvetica !important;
 }
+
+.homelogo{
+	background: #ffffff url('../images/home_graphic.png') no-repeat;
+}
+.homefooter{
+	background: #ffffff url('../images/texas_dshs.png') no-repeat;
+}

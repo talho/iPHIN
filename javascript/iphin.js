@@ -1,7 +1,7 @@
 var jQT = new $.jQTouch({
-  icon:'apple-touch-icon.png',
+  icon:'images/txphin-icon.png',
   //addGlossToIcon: false,
-  startupScreen:"apple-touch-startup.png",
+  startupScreen:"images/startup.png",
   statusBar:'black-translucent',
   preloadImages:[
     'jqtouch/themes/jqt/img/back_button.png',
@@ -9,7 +9,9 @@ var jQT = new $.jQTouch({
     'jqtouch/themes/jqt/img/button_clicked.png',
     'jqtouch/themes/jqt/img/grayButton.png',
     'jqtouch/themes/jqt/img/whiteButton.png',
-    'images/loading.gif'
+    'images/loading.gif',
+    'images/txphin-icon.png',
+    'images/startup.png'
   ]
 });
 
@@ -87,6 +89,7 @@ $(document).ready(function() {
 	
 	$('a#signin').click(function(event) {
 		showMessageBox('auth', '#signin_fields');
+		//$('#signin').hide();
 		$.ajax({
 		   type: "POST",
 		   data: $('#signin_form').serialize(),
@@ -96,11 +99,13 @@ $(document).ready(function() {
 			cache: false,
 		   success: function(data) {
 		   	 hideMessageBox();
+		   	 //$('#signin').show();
 				 setCookie(data);
 				 jQT.goTo($('#alerts_pane'), 'flip')
 			 },
 		   error: function(xhr) {
 		   	hideMessageBox();
+		   	//$('#signin').show();
 				switch (xhr.status) {
 					case 401: msg("No user with this email and password."); break;
 					case 0:   msg("Loss connect by Carrier, use Wi-Fi to Access Data."); break;
@@ -117,7 +122,26 @@ $(document).ready(function() {
    	if (info.direction == 'in') fetchAlerts();
 	});
 	
-	function populateAlertPane(data, id) { //Build an html string from the JSON data and append it to alert_details.  This is messy :(
+	function populateAlertsPreviewPane(data){
+		$('#alerts_preview').empty();
+		for (var d in data){  //for each alert
+			var alertPreviewString = '<li class="arrow"><a href="#alert_detail_pane" alert_id="' + d + '">';
+			if (data[d].header && data[d].header.length > 0 ){
+				alertPreviewString += '<p class="header">' + data[d].header + '</p>';
+			}
+			if (data[d].preview.pair){
+				for (p in data[d].preview.pair){ //for each pair in the alert 
+					alertPreviewString += '<p class="pair">' + 
+						data[d].preview.pair[p].key + '<span>' + 
+						data[d].preview.pair[p].value + '</span></p>';
+				}
+			}
+			alertPreviewString += '</a></li>';
+		$('#alerts_preview').append(alertPreviewString);
+		}
+	}	
+	
+	function populateAlertDetailPane(data, id) { //Build an html string from the JSON data and append it to alert_details.  This is messy :(
 		$('#alert_details').empty();	
 		alertDetailsString = '<ul class="alerts rounded"><li><p class="header" id="alertDetailHeader">'+ data[id].header + '</p>';
 		for ( var p in data[id].detail.pair ) {  //loop through the details for this alert 
@@ -129,8 +153,7 @@ $(document).ready(function() {
 		if (data[id].detail.content && data[id].detail.content.length > 0) { 
 			alertDetailsString += '<p class="content" id="alertDetailContent">' + data[id].detail.content + '</p>';	 	 
 		}
-		///////////if this alert requires acknowledgement
-		
+		///////////if this alert requires acknowledgement	
 		if (data[id].detail.path && data[id].detail.path.length > 0) {  
 			alertDetailsString += '<form id="alert_ack_form" action=' + data[id].detail.path + ' method="post" >';
 			////////////if this is an 'advanced' acknowledgement
@@ -148,8 +171,7 @@ $(document).ready(function() {
 				'<input name="authenticity_token" type="hidden" value="/">' +
 				'</form>';
 		}
-		alertDetailsString += '</ul></li>';
-		
+		alertDetailsString += '</ul></li>';	
 		$('#alert_details').append(alertDetailsString);	
 	}	
 	
@@ -174,14 +196,14 @@ $(document).ready(function() {
 		});
 	}
 
-	$("#alerts_preview").setTemplateElement("alerts_preview_template");
-	//$("#alert_detail_sub").setTemplateElement("alerts_detail_template");
-
+	//$("#alerts_preview").setTemplateElement("alerts_preview_template");
+	
 	function loadAlertsData(data) {
-		$('#alerts_preview').processTemplate(data);
+		//$('#alerts_preview').processTemplate(data);
+		populateAlertsPreviewPane(data); // stuff data into main alerts page
 		$("#alerts_preview li a").click(function(e) {		
 			var id = $(this).attr("alert_id")||0;	//
-			populateAlertPane(data,id);  //fill the detail pane with data 
+			populateAlertDetailPane(data,id);  //fill the detail pane with data 
 		});
 		hideMessageBox();
 		return false;
@@ -281,11 +303,27 @@ $(document).ready(function() {
 		});
 	}
 
-	$("#people_pane").setTemplateElement("people_results_template");
 	$("#new_contact_pane").setTemplateElement("new_contact_template");
 
+	function populatePeopleResultsPane(data){
+		$('#people_results_pane').empty();	
+		for (var d in data){
+			personResultString = 
+				'<ul id="people" class="people edgetoedge"><li class="person arrow">' + 
+				'<a href="#new_contact_pane" contact_id="'+ d + '">';
+			if (data[d].header && data[d].header.length > 0){  ////contact name 
+				personResultString += '<p class="header">' + data[d].header + '</p>';  
+			} 
+			for (var p in data[d].preview.pair){
+				personResultString += '<p>' + data[d].preview.pair[p].key + '</p>';
+			}
+			personResultString += '</a></li></ul>';
+		}
+		$('#people_results_pane').append(personResultString );
+	}
+
 	function loadPeopleData(data) {
-		$('#people_pane').processTemplate(data);
+		populatePeopleResultsPane(data);
 		jQT.goTo($('#people_pane'), 'slide');
 		// build the handler to get to the target
 		$("#people_pane li a").click(function(e) {

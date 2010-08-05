@@ -4,8 +4,10 @@
     <meta charset='UTF-8' />
     <title>TxPhin</title>
     <style media='screen' type='text/css'> @import "jqtouch/jqtouch.css";                </style>
-    <style media='screen' type='text/css'> @import "jqtouch/themes/apple/theme.min.css"; </style>
+    <style media='screen' type='text/css'> @import "jqtouch/themes/apple/theme.css"; </style>
     <style media='screen' type='text/css'> @import "stylesheets/iphin.css";              </style>
+    <link rel="apple-touch-startup-image" href="images/startup.png" />
+    <link rel="apple-touch-icon" href="images/txphin-icon.png" />
     <script charset='utf-8' src='javascript/phonegap.js'                     type='text/javascript'></script>
 		<script charset='utf-8' src='jqtouch/jquery.js'               type='text/javascript'></script>
     <script charset='utf-8' src='jqtouch/jqtouch.js'              type='text/javascript'></script>
@@ -35,8 +37,8 @@
        <div class="toolbar">
         <h1>TxPhin Sign In</h1>
       </div>
-      <ul class="rounded">
-        <img src="images/home_graphic.png" alt="Texas Public Health Network" class="figure">
+      <ul class="rounded homelogo">
+        <img src="images/blank.gif" class="figure" width="200" height="110">
       </ul>
       <form method="post" id="signin_form" accept-charset="utf-8">
         <ul class="rounded" id="signin_fields">
@@ -45,8 +47,8 @@
           <li><a href="#signIn" id="signin" class="blueButton submit login">Sign In</a></li> 
         </ul>
       </form>
-      <ul class="rounded">
-        <img src="images/texas_dshs.png" alt="dshs" class="figure"> 
+      <ul class="rounded homefooter">
+        <img src="images/blank.gif" class="figure" width="200" height="32"> 
       </ul>
    </div>
 
@@ -98,6 +100,12 @@
     <!-- People pane -->
     
     <div id="people_pane">
+    	<div class="toolbar">
+    		<h1>People</h1>
+    		<a class="back">Search</a>
+  		</div>
+  		<div id="people_results_pane">
+  		</div>
     </div>
     
     <!-- New Contact Pane -->
@@ -110,47 +118,11 @@
 
 <!-- Templates -->
 
-<p style="display:none"><textarea id="alerts_preview_template" rows="0" cols="0"><!--
-  {#foreach $T as entry}
-    <li class="arrow">
-      <a href="#alert_detail_pane" alert_id="{$T.entry$index}">
-      {#if $T.entry.header != null}
-        <p class="header">{$T.entry.header}</p>
-      {#/if}
-      {#if $T.entry.preview != null}
-        {#foreach $T.entry.preview.pair as line}
-          <p class="pair">{$T.line.key}<span>{$T.line.value}</span></p>
-        {#/for}
-      {#/if}
-      </a>
-    </li>
-  {#/for}
---></textarea></p>
+<!-- alerts_preview_template no longer exists. -->
 
-<!-- alert_detail_template does not exist. --> 
+<!-- alert_detail_template no longer exists. --> 
  
-<p style="display:none"><textarea id="people_results_template" rows="0" cols="0"><!--
-  <div class="toolbar">
-    <h1>People</h1>
-    <a class="back">Search</a>
-  </div>
-  <ul id="people" class="people edgetoedge">
-    {#foreach $T as entry}
-      <li class="person arrow">
-      <a href="#new_contact_pane" contact_id="{$T.entry$index}">
-      {#if $T.entry.header != null}
-        <p class="header">{$T.entry.header}</p>
-      {#/if}
-      {#if $T.entry.preview != null}
-        {#foreach $T.entry.preview.pair as line}
-          <p class={$T.line$key}>{$T.line.key}</p>
-        {#/for}
-      {#/if}
-      </a>
-      </li>
-    {#/for}
-  </ul>
---></textarea></p> 
+<!-- people_results_template no longer exists -->
 
 <p style="display:none"><textarea id="role_select_template" rows="0" cols="0"><!--
   <select name="[role_ids][]" multiple="multiple">
@@ -179,7 +151,7 @@
 <p style="display:none"><textarea id="new_contact_template" rows="0" cols="0"><!--
   <div class="toolbar">
     <h1>New Contact</h1>
-    <a href="#" class="button cancel"  >Back</a>
+    <a href="#" class="button back"  >Back</a>
   </div>
   <ul class="rounded">
     <form id="new_contact_form" action="#" method="post" accept-charset="utf-8">
