@@ -15,38 +15,33 @@ var jQT = new $.jQTouch({
   ]
 });
 
-function _setSstore_(key,value) {try{sessionStorage[key] = value;} catch(e) {window[key] = value;}}
-function _getSstore_(key) {try{return sessionStorage[key]} catch(e) {return window[key];}}
-
-function _setLstore_(key,value) {try{localStorage[key] = value;} catch(e) {window[key] = value;}}
-function _getLstore_(key) {try{return localStorage[key]} catch(e) {return window[key];}}
-
 var DOMAIN = "http://localhost:3000"; /* "http://www.txphin.org" release */
+//var DOMAIN = "http://192.168.1.44:3000"; /* "http://www.txphin.org" release */
 
-function setCookie(data) {_setSstore_("_cookie",data.cookie);}
-function getCookie() {return _getSstore_("_cookie");}
+function setCookie(data) {sessionStorage._cookie = data.cookie;}
+function getCookie() {return sessionStorage._cookie;}
 
-function setAlertDetail(data) {_setLstore_("alertDetail",data);}
-function getAlertDetail() {return _getLstore_("alertDetail");}
+function setAlertDetail(data) {localStorage.alertDetail = data;}
+function getAlertDetail() {return localStorage.alertDetail;}
 
-function setRolesAge(age) {_setLstore_("rolesAge",age);}
-function getRolesAge() {return _getLstore_("rolesAge")||0 ;}
+function setRolesAge(age) {sessionStorage.rolesAge = age;}
+function getRolesAge() {return sessionStorage.rolesAge||0 ;}
 
-function getRoles() {return _getLstore_("roles")||[];}
+function getRoles() {return JSON.parse(localStorage.roles)||[];}
 function setRoles(data) {
-	if (getRolesAge() < data.latest_in_secs) {
-		_setLstore_("roles",data.roles);
+	if (data.roles.length>0) {
+		localStorage.roles = JSON.stringify(data.roles);
 		setRolesAge(data.latest_in_secs);
 	}
 }
 
-function setJurisdictionsAge(age) {_setLstore_("jurisdictionsAge",age);}
-function getJurisdictionsAge() {return _getLstore_("jurisdictionsAge")||0 ;}
+function setJurisdictionsAge(age) {sessionStorage.jurisdictionsAge = age;}
+function getJurisdictionsAge() {return sessionStorage.jurisdictionsAge||0 ;}
 
-function getJurisdictions() {return _getLstore_("jurisdictions")||[];}
+function getJurisdictions() {return JSON.parse(localStorage.jurisdictions)||[];}
 function setJurisdictions(data) {
-	if (getJurisdictionsAge() < data.latest_in_secs) {
-		_setLstore_("jurisdictions",data.jurisdictions);
+	if (data.jurisdictions.length>0) {
+		localStorage.jurisdictions = JSON.stringify(data.jurisdictions);
 		setJurisdictionsAge(data.latest_in_secs);
 	}
 }
