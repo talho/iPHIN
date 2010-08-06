@@ -40,7 +40,12 @@ var jQT = new $.jQTouch({
   ]
 });
 
-try {		// for the iPhone and Safari browsers
+if(typeof sessionStorage == "undefined")
+  var sessionStorage = window;
+
+if(typeof localStorage == "undefined")
+  var localStorage = window;
+
 	function setCookie(data) {sessionStorage._cookie = data.cookie;}
 	function getCookie() {return sessionStorage._cookie;}
 
@@ -68,36 +73,6 @@ try {		// for the iPhone and Safari browsers
 			setJurisdictionsAge(data.latest_in_secs);
 		}
 	}
-}
-catch(e) {	// for FF and Chrome during development
-	function setCookie(data) {window._cookie = data.cookie;}
-	function getCookie() {return window._cookie;}
-
-	function setAlertDetail(data) {window.alertDetail = data;}
-	function getAlertDetail() {return window.alertDetail;}
-
-	function setRolesAge(age) {window.rolesAge = age;}
-	function getRolesAge() {return window.rolesAge||0 ;}
-
-	function getRoles() {return JSON.parse(window.roles)||[];}
-	function setRoles(data) {
-		if (data.roles.length>0) {
-			window.roles = JSON.stringify(data.roles);
-			setRolesAge(data.latest_in_secs);
-		}
-	}
-
-	function setJurisdictionsAge(age) {window.jurisdictionsAge = age;}
-	function getJurisdictionsAge() {return window.jurisdictionsAge||0 ;}
-
-	function getJurisdictions() {return JSON.parse(window.jurisdictions)||[];}
-	function setJurisdictions(data) {
-		if (data.jurisdictions.length>0) {
-			window.jurisdictions = JSON.stringify(data.jurisdictions);
-			setJurisdictionsAge(data.latest_in_secs);
-		}
-	}
-}
 
 
 function msg(message) {
