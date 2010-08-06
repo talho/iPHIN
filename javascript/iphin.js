@@ -62,7 +62,7 @@ function showMessageBox(command, element){  //prepends a string in a box at the 
 			userMessage = '<ul id="messageBox"><li><img src="images/loading.gif"> Searching...</li></ul>';
 		break;
 		case 'nosearch':
-			userMessage = '<ul id="messageBox"><li>No results.  Click Search to try again.</li></ul>';
+			userMessage = '<ul id="messageBox"><li>No results. Tap Search to return.</li></ul>';
 		break;
 		case 'auth':
 			userMessage = '<li id="messageBox"><img src="images/loading.gif"> Authenticating...</li>';
@@ -172,24 +172,56 @@ $(document).ready(function() {
 		}
 		///////////if this alert requires acknowledgement	
 		if (data[id].detail.path && data[id].detail.path.length > 0) {  
-			alertDetailsString += '<form id="alert_ack_form" action=' + data[id].detail.path + ' method="post" >';
-			////////////if this is an 'advanced' acknowledgement
-			if (data[id].detail.response != null) {	
-				alertDetailsString += '<br><select name="alert_attempt[call_down_response]" >' + 
-					'<option value="" SELECTED>Select your response...</option>';
-				for (var o in data[id].detail.response ){
-					alertDetailsString += ' <option value="' + o + '">' + data[id].detail.response[o] + '</option>';
-				}	
-				alertDetailsString += '</select>';
-			}
-			alertDetailsString += 
-				'<a href="#alerts_pane" class="blueButton submit acknowledge">Acknowledge</a>' +
-				'<input name="_method" type="hidden" value="put">' + 
-				'<input name="authenticity_token" type="hidden" value="/">' +
-				'</form>';
-		}
+//			alertDetailsString += '<form id="alert_ack_form" action="' + DOMAIN + data[id].detail.path + '" method="post" >';
+//			////////////if this is an 'advanced' acknowledgement
+//			if (data[id].detail.response != null) {	
+//				alertDetailsString += '<br><select name="alert_attempt[call_down_response]" >' + 
+//					'<option value="" SELECTED>Select your response...</option>';
+//				for (var o in data[id].detail.response ){
+//					alertDetailsString += ' <option value="' + o + '">' + data[id].detail.response[o] + '</option>';
+//				}	
+//				alertDetailsString += '</select>';
+//			}
+			//alertDetailsString += 
+			//	'<a href="#alerts_pane" class="blueButton submit">Acknowledge</a>' +
+			//	'<input name="_method" type="hidden" value="put">' +
+			//	'<input name="authenticity_token" type="hidden" value="/">' +
+//				'</form>';
+				alertDetailsString += '<a href="#" id="ackButton" class="blueButton submit" onclick>Acknowledge</a>'; 
+		}		
 		alertDetailsString += '</ul></li>';	
-		$('#alert_details').append(alertDetailsString);	
+		$('#alert_details').append(alertDetailsString);
+		$('#ackButton').click(function() {
+			$('#ackButton').text('working...');
+			acknowledgeAlert(data[id].detail.path);
+		});	
+	}	
+	
+	function acknowledgeAlert(path){
+		var xhr = $.ajax({
+		   type: "GET",
+		   url: DOMAIN + path + '.json', // '/alerts/23/acknowledge' + '.json', //
+			beforeSend: function(xhr) {
+				xhr.setRequestHeader("Cookie", getCookie()); 
+			},
+		   success: function(resp, text) {
+ 				if (xhr.status == 200) {        ///Hacky crappy workaround to jquery bug wherein EVERY response comes back 'success'
+ 					// everything ok
+ 					$('#ackButton').unbind('click');
+ 					$('#ackButton').text('Thank you.');
+ 					setTimeout(function() { $('#ackButton').fadeOut(); }, 2000);	
+ 				} else {
+   				// it's actually an error
+   				$('#ackButton').text('Acknowledge');
+   				msg('Network error. Alert NOT acknowledged.');
+ 				}
+			},
+		   error: function(xhr) {
+		   	//alert('no how no way: ' + xhr.statusText);
+				$('#ackButton').text('Acknowledge');
+		   	msg('Network error. (code: ack ' + xhr.statusText + ', ' + xhr.response + ')');
+			}
+		});
 	}	
 	
 	function fetchAlerts() {
@@ -202,7 +234,8 @@ $(document).ready(function() {
 		   success: function(data) {
 		   	hideMessageBox(); 
 		   	loadAlertsData(data);
-		   	},
+
+           },
 
 		   error: function(xhr) {
 		   	hideMessageBox();
