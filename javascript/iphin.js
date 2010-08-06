@@ -18,14 +18,14 @@ var jQT = new $.jQTouch({
 var DOMAIN = "http://localhost:3000"; /* "http://www.txphin.org" release */
 //var DOMAIN = "http://192.168.1.44:3000"; /* "http://www.txphin.org" release */
 
-function setCookie(data) {sessionStorage._cookie = data.cookie;}
-function getCookie() {return sessionStorage._cookie;}
+function setCookie(data) {window._cookie = data.cookie;}
+function getCookie() {return window._cookie;}
 
 function setAlertDetail(data) {localStorage.alertDetail = data;}
 function getAlertDetail() {return localStorage.alertDetail;}
 
-function setRolesAge(age) {sessionStorage.rolesAge = age;}
-function getRolesAge() {return sessionStorage.rolesAge||0 ;}
+function setRolesAge(age) {window.rolesAge = age;}
+function getRolesAge() {return window.rolesAge||0 ;}
 
 function getRoles() {return JSON.parse(localStorage.roles)||[];}
 function setRoles(data) {
@@ -35,8 +35,8 @@ function setRoles(data) {
 	}
 }
 
-function setJurisdictionsAge(age) {sessionStorage.jurisdictionsAge = age;}
-function getJurisdictionsAge() {return sessionStorage.jurisdictionsAge||0 ;}
+function setJurisdictionsAge(age) {window.jurisdictionsAge = age;}
+function getJurisdictionsAge() {return window.jurisdictionsAge||0 ;}
 
 function getJurisdictions() {return JSON.parse(localStorage.jurisdictions)||[];}
 function setJurisdictions(data) {
@@ -83,6 +83,24 @@ $(document).ready(function() {
 	if (typeof(PhoneGap) != 'undefined') {
 	    $('body > *').css({minHeight: '460px !important'});
 	}
+
+	//set up [enter key] listener for login
+	$('#loginEmailField, #loginPasswordField').keypress(function(e) {
+        if(e.which == 13) {
+        		e.preventDefault();
+            jQuery(this).blur();
+            jQuery('#signin').focus().click();
+        }
+	});
+	
+	//set up [enter key] listener for people search
+	$('#people_search_form_first_name, #people_search_form_last_name, #people_search_form_email').keypress(function(e) {
+        if(e.which == 13) {
+        		e.preventDefault();
+            jQuery(this).blur();
+            jQuery('#quicksearch').focus().click();
+        }
+	});
 
 	// SignIn 
 	
@@ -185,6 +203,7 @@ $(document).ready(function() {
 		   	hideMessageBox(); 
 		   	loadAlertsData(data);
 		   	},
+
 		   error: function(xhr) {
 		   	hideMessageBox();
 				switch (xhr.status) {
@@ -212,6 +231,8 @@ $(document).ready(function() {
 	
 	$('#people_search_pane').bind('pageAnimationStart', function(event, info){
 		if (info.direction == 'in') {
+			$('#people_jurisdictions_holder').show();
+			$('#people_roles_holder').show();
     		fetchRoles(); 
 			fetchJurisdictions();
 		}
@@ -236,10 +257,13 @@ $(document).ready(function() {
 				$('#people_roles_select').processTemplate(getRoles());},
 			error: function(xhr) {
 				hideMessageBox();
-				switch (xhr.status) {
-					case   0: msg("Loss connect by Carrier, use Wi-Fi to Access Data."); break;
-					default:  msg("Network error. (code: people " + xhr.status + ")");}
-				}
+				$('#people_roles_select').text('Network error.');
+				setTimeout(function() { $('#people_roles_holder').slideUp(); }, 1000);
+//				switch (xhr.status) {
+//					case   0: msg("Loss connect by Carrier, use Wi-Fi to Access Data."); break;
+//					default:  msg("Network error. (code: people " + xhr.status + ")");
+//				}
+			}
 
 		});
 	}
@@ -261,10 +285,12 @@ $(document).ready(function() {
 				$('#people_jurisdictions_select').processTemplate(getJurisdictions());},
 			error: function(xhr) {
 				hideMessageBox();
-				switch (xhr.status) {
-					case   0: msg("Loss connect by Carrier, use Wi-Fi to Access Data."); break;
-					default:  msg("Network error. (code: people " + xhr.status + ")");
-				}
+				$('#people_jurisdictions_select').text('Network error.');
+				setTimeout(function() { $('#people_jurisdictions_holder').slideUp(); }, 1000);
+//				switch (xhr.status) {
+//					case   0: msg("Loss connect by Carrier, use Wi-Fi to Access Data."); break;
+//					default:  msg("Network error. (code: people " + xhr.status + ")");
+//				}
 			}
 		});
 	}
@@ -328,7 +354,7 @@ $(document).ready(function() {
 			for (var d in data){
 				var personResultString = 
 					'<ul id="people" class="people edgetoedge"><li class="person arrow">' + 
-					'<a href="#new_contact_pane" class="swap" contact_id="'+ d + '">'; // **THIS BREAKS BADLY WITHOUT CLASS="SWAP".  NO, I DON'T KNOW WHY***
+					'<a href="#new_contact_pane" class="pop" contact_id="'+ d + '">'; // **THIS BREAKS BADLY WITHOUT AN ANIMATION CLASS.  NO, I DON'T KNOW WHY***
 				if (data[d].header && data[d].header.length > 0){  						////contact name 
 					personResultString += '<p class="header">' + data[d].header + '</p>';  
 				} 

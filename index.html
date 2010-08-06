@@ -42,8 +42,8 @@
       </ul>
       <form method="post" id="signin_form" accept-charset="utf-8">
         <ul class="rounded" id="signin_fields">
-          <li><input name="session[email]" value="" type="text" placeholder="E-mail" autocapitalize="off"></li>
-          <li><input name="session[password]" value="" type="password" placeholder="Password" autocapitalize="off"></li>
+          <li><input name="session[email]" value="" id="loginEmailField" type="text" placeholder="E-mail" autocapitalize="off"></li>
+          <li><input name="session[password]" value="" id="loginPasswordField" type="password" placeholder="Password" autocapitalize="off"></li>
           <li><a href="#signIn" id="signin" class="blueButton submit login">Sign In</a></li> 
         </ul>
       </form>
@@ -85,14 +85,14 @@
         <form action="/search/show_advanced" method="post" id="people_search_form" accept-charset="utf-8">
             <li><input name="first_name" id="people_search_form_first_name" type="text" placeholder="First Name"></li>
             <li><input name="last_name"  id="people_search_form_last_name" type="text" placeholder="Last Name"></li>
-            <li><input name="email" type="text" placeholder="E-mail"></li>
-            <li>
+            <li><input name="email" id="people_search_form_email" type="text" placeholder="E-mail"></li>
+            <li id="people_jurisdictions_holder">
               <div id="people_jurisdictions_select"></div>
             </li>
-            <li>
+            <li id="people_roles_holder">
               <div id="people_roles_select"></div>
             </li>
-            <li><a id="quicksearch" class="blueButton submit swap" href="#people_pane">Search</a></li>  
+            <li><a id="quicksearch" class="blueButton submit slideup" href="#people_pane">Search</a></li>  
         </form>
     </ul>
     </div>
