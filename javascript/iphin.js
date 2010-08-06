@@ -1,3 +1,28 @@
+var PROTOCOL = "http://";
+//var HOST     = "localhost:3000";			 /* "www.txphin.org" release */
+var HOST     = "192.168.1.44:3000"
+var DOMAIN   = PROTOCOL + HOST;
+
+// Wait for PhoneGap to load
+function onBodyLoad() {	
+	document.addEventListener("deviceready",onDeviceReady,false);	}
+// PhoneGap is loaded and it is now safe to make calls PhoneGap methods
+function onDeviceReady() { 
+	try { navigator.network.isReachable(DOMAIN, reachableCallback); }
+	catch (e) {alert("Since this is not on the iPhone Network connection reporting could be erroreous.");}
+	}
+// Check network status
+function reachableCallback(reachability) {
+	internetConnStatus = reachability.internetConnectionStatus;
+	wifiConnStatus = reachability.localWiFiConnectionStatus;
+	if (internetConnStatus == 0) {
+		if (wifiConnStatus == 1) { 
+			navigator.notification.alert("Loss Connect by Carrier, switch to Wi-Fi for Data Access.","TxPhin", "OK"); }
+		else if (wifiConnStatus == 0) { 
+			navigator.notification.alert("Loss Connect by Carrier and WiFi, relocate to get connection.","TxPhin", "OK"); }
+	}
+}
+
 var jQT = new $.jQTouch({
   icon:'images/txphin-icon.png',
   //addGlossToIcon: false,
@@ -15,36 +40,65 @@ var jQT = new $.jQTouch({
   ]
 });
 
-var DOMAIN = "http://localhost:3000"; /* "http://www.txphin.org" release */
-//var DOMAIN = "http://192.168.1.44:3000"; /* "http://www.txphin.org" release */
+try {		// for the iPhone and Safari browsers
+	function setCookie(data) {sessionStorage._cookie = data.cookie;}
+	function getCookie() {return sessionStorage._cookie;}
 
-function setCookie(data) {sessionStorage._cookie = data.cookie;}
-function getCookie() {return sessionStorage._cookie;}
+	function setAlertDetail(data) {localStorage.alertDetail = data;}
+	function getAlertDetail() {return localStorage.alertDetail;}
 
-function setAlertDetail(data) {localStorage.alertDetail = data;}
-function getAlertDetail() {return localStorage.alertDetail;}
+	function setRolesAge(age) {sessionStorage.rolesAge = age;}
+	function getRolesAge() {return sessionStorage.rolesAge||0 ;}
 
-function setRolesAge(age) {sessionStorage.rolesAge = age;}
-function getRolesAge() {return sessionStorage.rolesAge||0 ;}
+	function getRoles() {return JSON.parse(localStorage.roles)||[];}
+	function setRoles(data) {
+		if (data.roles.length>0) {
+			localStorage.roles = JSON.stringify(data.roles);
+			setRolesAge(data.latest_in_secs);
+		}
+	}
 
-function getRoles() {return JSON.parse(localStorage.roles)||[];}
-function setRoles(data) {
-	if (data.roles.length>0) {
-		localStorage.roles = JSON.stringify(data.roles);
-		setRolesAge(data.latest_in_secs);
+	function setJurisdictionsAge(age) {sessionStorage.jurisdictionsAge = age;}
+	function getJurisdictionsAge() {return sessionStorage.jurisdictionsAge||0 ;}
+
+	function getJurisdictions() {return JSON.parse(localStorage.jurisdictions)||[];}
+	function setJurisdictions(data) {
+		if (data.jurisdictions.length>0) {
+			localStorage.jurisdictions = JSON.stringify(data.jurisdictions);
+			setJurisdictionsAge(data.latest_in_secs);
+		}
+	}
+}
+catch(e) {	// for FF and Chrome during development
+	function setCookie(data) {window._cookie = data.cookie;}
+	function getCookie() {return window._cookie;}
+
+	function setAlertDetail(data) {window.alertDetail = data;}
+	function getAlertDetail() {return window.alertDetail;}
+
+	function setRolesAge(age) {window.rolesAge = age;}
+	function getRolesAge() {return window.rolesAge||0 ;}
+
+	function getRoles() {return JSON.parse(window.roles)||[];}
+	function setRoles(data) {
+		if (data.roles.length>0) {
+			window.roles = JSON.stringify(data.roles);
+			setRolesAge(data.latest_in_secs);
+		}
+	}
+
+	function setJurisdictionsAge(age) {window.jurisdictionsAge = age;}
+	function getJurisdictionsAge() {return window.jurisdictionsAge||0 ;}
+
+	function getJurisdictions() {return JSON.parse(window.jurisdictions)||[];}
+	function setJurisdictions(data) {
+		if (data.jurisdictions.length>0) {
+			window.jurisdictions = JSON.stringify(data.jurisdictions);
+			setJurisdictionsAge(data.latest_in_secs);
+		}
 	}
 }
 
-function setJurisdictionsAge(age) {sessionStorage.jurisdictionsAge = age;}
-function getJurisdictionsAge() {return sessionStorage.jurisdictionsAge||0 ;}
-
-function getJurisdictions() {return JSON.parse(localStorage.jurisdictions)||[];}
-function setJurisdictions(data) {
-	if (data.jurisdictions.length>0) {
-		localStorage.jurisdictions = JSON.stringify(data.jurisdictions);
-		setJurisdictionsAge(data.latest_in_secs);
-	}
-}
 
 function msg(message) {
 	try {navigator.notification.alert(message,"TxPhin","OK");}
