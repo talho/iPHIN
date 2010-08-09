@@ -244,47 +244,55 @@ $(document).ready(function() {
 	
 	function populateAlertDetailPane(data, id) { //Build an html string from the JSON data and append it to alert_details.  This is messy :(
 		$('#alert_details').empty();	
-		alertDetailsString = '<ul class="alerts rounded"><li><p class="header" id="alertDetailHeader">'+ data[id].header + '</p>';
+		var alertDetailsString = '<ul class="alerts rounded"><li><p class="header" id="alertDetailHeader">'+ data[id].header + '</p>';
 		for ( var p in data[id].detail.pair ) {  //loop through the details for this alert 
 			alertDetailsString += '<p class="pair">' + 
 			data[id].detail.pair[p].key + '<span>' + 
 			data[id].detail.pair[p].value + '</span></p>';
-		}
-	
+		}	
 		if (data[id].detail.content && data[id].detail.content.length > 0) { 
 			alertDetailsString += '<p class="content" id="alertDetailContent">' + decodeURI(data[id].detail.content) + '</p>';	 	 
 		}
-		///////////if this alert requires acknowledgement	
+		/////////// if this alert requires acknowledgement	
 		if (data[id].detail.path && data[id].detail.path.length > 0) {  
-			////////////if this is an 'advanced' acknowledgement
+			//////////// if this is an 'advanced' acknowledgement
 			if (data[id].detail.response != null) {	
-				var doDetailAck = true;   ///// used on click. 
-				alertDetailsString += '<br><select id="ackAdvancedResponse">' + 
-					'<option value="" SELECTED>Select your response...</option>';
+				alertDetailsString += '<br /><p class="">Please select your response:</p>';
+				var doAdvancedAck = true;   ///// used on click. 
 				for (var o in data[id].detail.response ){
-					alertDetailsString += ' <option value="' + o + '">' + data[id].detail.response[o] + '</option>';
+					alertDetailsString += '<div name="" class="radioList"> <input type="radio" class="radioButtons" name="ackAdvancedResponse" value="' + o + 
+					'"> ' + data[id].detail.response[o] + '</div>';
 				}	
-				alertDetailsString += '</select>';
 			}
 			alertDetailsString += '<a href="#" id="ackButton" class="blueButton submit" onclick>Acknowledge</a>'; 
 		}		
 		alertDetailsString += '</ul></li>';	
 		$('#alert_details').append(alertDetailsString);
+		///////////// handle radio selection UI 
+		$('.radioList').click(function() {	
+			$(this).children(".radioButtons").attr('checked', true);
+			$(this).children(".radioButtons").change();
+		});
+		$('.radioButtons').change(function() {
+			$('.radioList').removeClass('radioListSelected');
+			$(this).parent().addClass('radioListSelected');
+		});
+
+		///////////// handle acknowledge button clicks
 		$('#ackButton').click(function() {
-			if (doDetailAck) {
-				var detailResponse = $('#ackAdvancedResponse').val();
-				if (detailResponse == '') {
+			var responseData = '';
+			if (doAdvancedAck) {
+				var detailResponse = $("input[name='ackAdvancedResponse']:checked").val(); //grab the response, if any 
+				if (detailResponse == undefined) {
 					msg('You must select a response.');
 					return false;
 				} else {
-					$('#ackButton').text('working...');
 					responseData = {'alert_attempt[call_down_response]': detailResponse};
-					acknowledgeAlert(data[id].detail.path, responseData);
 				}
-			} else {
-				$('#ackButton').text('working...');
-				acknowledgeAlert(data[id].detail.path, '');
-			}
+			} 
+			$('#ackButton').unbind('click');
+			$('#ackButton').text('working...');
+			acknowledgeAlert(data[id].detail.path, responseData);	 
 		});	
 	}	
 	
@@ -299,7 +307,6 @@ $(document).ready(function() {
 		   success: function(resp, text) {
  				if (xhr.status == 200) {        ///Hacky crappy workaround to jquery bug wherein EVERY response comes back 'success'
  					// everything ok
- 					$('#ackButton').unbind('click');
  					$('#ackButton').text('Thank you.');
  					setTimeout(function() { $('#ackButton').fadeOut(); }, 2000);	
  				} else {

@@ -33,3 +33,22 @@ ul.people li p {font-weight: normal; font-size: 13px;}
 .homefooter{
 	background: #ffffff url('../images/texas_dshs.png') no-repeat;
 }
+
+.radioList{
+	border: 1px solid #B4B4B4;
+	border-bottom-left-radius: 8px 8px;
+	border-bottom-right-radius: 8px 8px;
+	border-top-left-radius: 8px 8px;
+	border-top-right-radius: 8px 8px;
+	margin: 5px;
+	padding: 2px;
+	color: black;
+	font: normal normal bold 17px/normal Helvetica;
+	background: -webkit-gradient(linear, left top, left bottom, from(#ebeef1), to(#cfd6e0));
+	/*background: url("img/toolbaaar.png") repeat-x scroll 0px 0px*/
+}
+
+.radioListSelected{
+	background: -webkit-gradient(linear, left top, left bottom, from(#ffffff), to(#eeeeee));
+	border: 1px solid #555555;
+}
