@@ -1,3 +1,28 @@
+var PROTOCOL = "http://";
+//var HOST     = "localhost:3000";			 /* "www.txphin.org" release */
+var HOST     = "192.168.1.44:3000"
+var DOMAIN   = PROTOCOL + HOST;
+
+// Wait for PhoneGap to load
+function onBodyLoad() {	
+	document.addEventListener("deviceready",onDeviceReady,false);	}
+// PhoneGap is loaded and it is now safe to make calls PhoneGap methods
+function onDeviceReady() { 
+	try { navigator.network.isReachable(DOMAIN, reachableCallback); }
+	catch (e) {alert("Since this is not on the iPhone Network connection reporting could be erroreous.");}
+	}
+// Check network status
+function reachableCallback(reachability) {
+	internetConnStatus = reachability.internetConnectionStatus;
+	wifiConnStatus = reachability.localWiFiConnectionStatus;
+	if (internetConnStatus == 0) {
+		if (wifiConnStatus == 1) { 
+			navigator.notification.alert("Loss Connect by Carrier, switch to Wi-Fi for Data Access.","TxPhin", "OK"); }
+		else if (wifiConnStatus == 0) { 
+			navigator.notification.alert("Loss Connect by Carrier and WiFi, relocate to get connection.","TxPhin", "OK"); }
+	}
+}
+
 var jQT = new $.jQTouch({
   icon:'images/txphin-icon.png',
   //addGlossToIcon: false,
@@ -15,36 +40,65 @@ var jQT = new $.jQTouch({
   ]
 });
 
-var DOMAIN = "http://localhost:3000"; /* "http://www.txphin.org" release */
-//var DOMAIN = "http://192.168.1.44:3000"; /* "http://www.txphin.org" release */
+try {		// for the iPhone and Safari browsers
+	function setCookie(data) {sessionStorage._cookie = data.cookie;}
+	function getCookie() {return sessionStorage._cookie;}
 
-function setCookie(data) {window._cookie = data.cookie;}
-function getCookie() {return window._cookie;}
+	function setAlertDetail(data) {localStorage.alertDetail = data;}
+	function getAlertDetail() {return localStorage.alertDetail;}
 
-function setAlertDetail(data) {localStorage.alertDetail = data;}
-function getAlertDetail() {return localStorage.alertDetail;}
+	function setRolesAge(age) {sessionStorage.rolesAge = age;}
+	function getRolesAge() {return sessionStorage.rolesAge||0 ;}
 
-function setRolesAge(age) {window.rolesAge = age;}
-function getRolesAge() {return window.rolesAge||0 ;}
+	function getRoles() {return JSON.parse(localStorage.roles)||[];}
+	function setRoles(data) {
+		if (data.roles.length>0) {
+			localStorage.roles = JSON.stringify(data.roles);
+			setRolesAge(data.latest_in_secs);
+		}
+	}
 
-function getRoles() {return JSON.parse(localStorage.roles)||[];}
-function setRoles(data) {
-	if (data.roles.length>0) {
-		localStorage.roles = JSON.stringify(data.roles);
-		setRolesAge(data.latest_in_secs);
+	function setJurisdictionsAge(age) {sessionStorage.jurisdictionsAge = age;}
+	function getJurisdictionsAge() {return sessionStorage.jurisdictionsAge||0 ;}
+
+	function getJurisdictions() {return JSON.parse(localStorage.jurisdictions)||[];}
+	function setJurisdictions(data) {
+		if (data.jurisdictions.length>0) {
+			localStorage.jurisdictions = JSON.stringify(data.jurisdictions);
+			setJurisdictionsAge(data.latest_in_secs);
+		}
+	}
+}
+catch(e) {	// for FF and Chrome during development
+	function setCookie(data) {window._cookie = data.cookie;}
+	function getCookie() {return window._cookie;}
+
+	function setAlertDetail(data) {window.alertDetail = data;}
+	function getAlertDetail() {return window.alertDetail;}
+
+	function setRolesAge(age) {window.rolesAge = age;}
+	function getRolesAge() {return window.rolesAge||0 ;}
+
+	function getRoles() {return JSON.parse(window.roles)||[];}
+	function setRoles(data) {
+		if (data.roles.length>0) {
+			window.roles = JSON.stringify(data.roles);
+			setRolesAge(data.latest_in_secs);
+		}
+	}
+
+	function setJurisdictionsAge(age) {window.jurisdictionsAge = age;}
+	function getJurisdictionsAge() {return window.jurisdictionsAge||0 ;}
+
+	function getJurisdictions() {return JSON.parse(window.jurisdictions)||[];}
+	function setJurisdictions(data) {
+		if (data.jurisdictions.length>0) {
+			window.jurisdictions = JSON.stringify(data.jurisdictions);
+			setJurisdictionsAge(data.latest_in_secs);
+		}
 	}
 }
 
-function setJurisdictionsAge(age) {window.jurisdictionsAge = age;}
-function getJurisdictionsAge() {return window.jurisdictionsAge||0 ;}
-
-function getJurisdictions() {return JSON.parse(localStorage.jurisdictions)||[];}
-function setJurisdictions(data) {
-	if (data.jurisdictions.length>0) {
-		localStorage.jurisdictions = JSON.stringify(data.jurisdictions);
-		setJurisdictionsAge(data.latest_in_secs);
-	}
-}
 
 function msg(message) {
 	try {navigator.notification.alert(message,"TxPhin","OK");}
@@ -83,24 +137,6 @@ $(document).ready(function() {
 	if (typeof(PhoneGap) != 'undefined') {
 	    $('body > *').css({minHeight: '460px !important'});
 	}
-
-	//set up [enter key] listener for login
-	$('#loginEmailField, #loginPasswordField').keypress(function(e) {
-        if(e.which == 13) {
-        		e.preventDefault();
-            jQuery(this).blur();
-            jQuery('#signin').focus().click();
-        }
-	});
-	
-	//set up [enter key] listener for people search
-	$('#people_search_form_first_name, #people_search_form_last_name, #people_search_form_email').keypress(function(e) {
-        if(e.which == 13) {
-        		e.preventDefault();
-            jQuery(this).blur();
-            jQuery('#quicksearch').focus().click();
-        }
-	});
 
 	// SignIn 
 	
@@ -236,9 +272,7 @@ $(document).ready(function() {
 		   success: function(data) {
 		   	hideMessageBox(); 
 		   	loadAlertsData(data);
-
-           },
-
+         },
 		   error: function(xhr) {
 		   	hideMessageBox();
 				switch (xhr.status) {
@@ -266,8 +300,6 @@ $(document).ready(function() {
 	
 	$('#people_search_pane').bind('pageAnimationStart', function(event, info){
 		if (info.direction == 'in') {
-			$('#people_jurisdictions_holder').show();
-			$('#people_roles_holder').show();
     		fetchRoles(); 
 			fetchJurisdictions();
 		}
@@ -292,9 +324,11 @@ $(document).ready(function() {
 				$('#people_roles_select').processTemplate(getRoles());},
 			error: function(xhr) {
 				hideMessageBox();
-				$('#people_roles_select').text('Network error.');
-				setTimeout(function() { $('#people_roles_holder').slideUp(); }, 1000);
-			}
+				switch (xhr.status) {
+//					case   0: msg("Loss connect by Carrier, use Wi-Fi to Access Data."); break;
+					default:  msg("Network error. (code: people " + xhr.status + ")");}
+				}
+
 		});
 	}
 
@@ -315,8 +349,10 @@ $(document).ready(function() {
 				$('#people_jurisdictions_select').processTemplate(getJurisdictions());},
 			error: function(xhr) {
 				hideMessageBox();
-				$('#people_jurisdictions_select').text('Network error.');
-				setTimeout(function() { $('#people_jurisdictions_holder').slideUp(); }, 1000);
+				switch (xhr.status) {
+//					case   0: msg("Loss connect by Carrier, use Wi-Fi to Access Data."); break;
+					default:  msg("Network error. (code: people " + xhr.status + ")");
+				}
 			}
 		});
 	}
@@ -380,7 +416,7 @@ $(document).ready(function() {
 			for (var d in data){
 				var personResultString = 
 					'<ul id="people" class="people edgetoedge"><li class="person arrow">' + 
-					'<a href="#new_contact_pane" class="pop" contact_id="'+ d + '">'; // **THIS BREAKS BADLY WITHOUT AN ANIMATION CLASS.  NO, I DON'T KNOW WHY***
+					'<a href="#new_contact_pane" class="swap" contact_id="'+ d + '">'; // **THIS BREAKS BADLY WITHOUT CLASS="SWAP".  NO, I DON'T KNOW WHY***
 				if (data[d].header && data[d].header.length > 0){  						////contact name 
 					personResultString += '<p class="header">' + data[d].header + '</p>';  
 				} 
