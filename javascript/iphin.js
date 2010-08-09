@@ -1,25 +1,28 @@
 var PROTOCOL = "http://";
 // var HOST = "txphin.org" // for production
-var HOST = (/iphone/i.test(navigator.platform)) ? "192.168.0.15:3000" : "localhost:3000"
+var HOST = (/iphone/i.test(navigator.platform)) ? "192.168.1.44:3000" : "localhost:3000"
 var DOMAIN   = PROTOCOL + HOST;
 
 // Wait for PhoneGap to load
 function onBodyLoad() {	
-	document.addEventListener("deviceready",onDeviceReady,false);	}
+	document.addEventListener("deviceready",onDeviceReady,false);	
+}
 // PhoneGap is loaded and it is now safe to make calls PhoneGap methods
 function onDeviceReady() { 
 	try { navigator.network.isReachable(DOMAIN, reachableCallback); }
 	catch (e) {alert("Since this is not on the iPhone Network connection reporting could be erroreous.");}
-	}
+}
 // Check network status
 function reachableCallback(reachability) {
 	internetConnStatus = reachability.internetConnectionStatus;
 	wifiConnStatus = reachability.localWiFiConnectionStatus;
 	if (internetConnStatus == 0) {
 		if (wifiConnStatus == 1) { 
-			navigator.notification.alert("Loss Connect by Carrier, switch to Wi-Fi for Data Access.","TxPhin", "OK"); }
+			navigator.notification.alert("Loss Connect by Carrier, switch to Wi-Fi for Data Access.","TxPhin", "OK"); 
+		}
 		else if (wifiConnStatus == 0) { 
-			navigator.notification.alert("Loss Connect by Carrier and WiFi, relocate to get connection.","TxPhin", "OK"); }
+			navigator.notification.alert("Loss Connect by Carrier and WiFi, relocate to get connection.","TxPhin", "OK"); 
+		}
 	}
 }
 
@@ -64,7 +67,7 @@ if(typeof localStorage == "undefined")
 	}
 
 	function setJurisdictionsExpiresOn(date) {localStorage.jurisdictionExpiresOn = date;}
-	function jurisdictionHasExpired() {return (Date() > new Date(localStorage.jurisdictionExpiresOn||0)) ;}
+	function jurisdictionsHasExpired() {return (Date() > new Date(localStorage.jurisdictionExpiresOn||0)) ;}
 
 	function getJurisdictions() {return JSON.parse(localStorage.jurisdictions||"[]");}
 	function setJurisdictions(data) {
@@ -91,7 +94,7 @@ function showMessageBox(command, element){  //prepends a string in a box at the 
 			userMessage = '<ul id="messageBox"><li><img src="images/loading.gif"> Searching...</li></ul>';
 		break;
 		case 'nosearch':
-			userMessage = '<ul id="messageBox"><li>No results.  Click Search to try again.</li></ul>';
+			userMessage = '<ul id="messageBox"><li>No results. Tap Search to return.</li></ul>';
 		break;
 		case 'auth':
 			userMessage = '<li id="messageBox"><img src="images/loading.gif"> Authenticating...</li>';
@@ -113,11 +116,28 @@ $(document).ready(function() {
 	    $('body > *').css({minHeight: '460px !important'});
 	}
 
+	//set up [enter key] listener for login
+	$('#loginEmailField, #loginPasswordField').keypress(function(e) {
+        if(e.which == 13) {
+        		e.preventDefault();
+            jQuery(this).blur();
+            jQuery('#signin').focus().click();
+        }
+	});
+	
+	//set up [enter key] listener for people search
+	$('#people_search_form_first_name, #people_search_form_last_name, #people_search_form_email').keypress(function(e) {
+        if(e.which == 13) {
+        		e.preventDefault();
+            jQuery(this).blur();
+            jQuery('#quicksearch').focus().click();
+        }
+	});
+
 	// SignIn 
 	
 	$('a#signin').click(function(event) {
 		showMessageBox('auth', '#signin_fields');
-		//$('#signin').hide();
 		$.ajax({
 		   type: "POST",
 		   data: $('#signin_form').serialize(),
@@ -207,18 +227,46 @@ $(document).ready(function() {
    	if (info.direction == 'in') fetchAlerts();
 	});
 	
+	$('#refreshAlertsButton').click(function(event) {  //refreshbutton binding
+		fetchAlerts();
+	});
+	
 	function populateAlertsPreviewPane(data){
 		$('#alerts_preview').empty();
 		for (var d in data){  //for each alert
-			var alertPreviewString = '<li class="arrow"><a href="#alert_detail_pane" alert_id="' + d + '">';
+			var alertPreviewString = '<li class="arrow '; 
+			if (data[d].detail.path) {	alertPreviewString += 'ackPreview';	}   //add CSS class to distinguish alerts that need ack.
+			alertPreviewString += ' "><a href="#alert_detail_pane" alert_id="' + d + '">';
+			var severityIcon = 'images/status_unknown.png';
+			if (data[d].preview.pair ){	
+				for (var p1 in data[d].preview.pair){	
+					if (data[d].preview.pair[p1].key === 'Severity'){
+						switch(data[d].preview.pair[p1].value){
+							case 'Extreme': 
+								severityIcon = 'images/status_extreme.png';
+							break;
+							case 'Severe':
+								severityIcon = 'images/status_severe.png';
+							break;
+							case 'Moderate':
+								severityIcon = 'images/status_moderate.png';
+							break; 
+							case 'Minor':
+								severityIcon = 'images/status_minor.png';
+							break;
+						}
+					}	
+				}
+				alertPreviewString += '<img class="severityIcon" src="' + severityIcon + '">';
+			}
 			if (data[d].header && data[d].header.length > 0 ){
 				alertPreviewString += '<p class="header">' + data[d].header + '</p>';
 			}
-			if (data[d].preview.pair){
-				for (p in data[d].preview.pair){ //for each pair in the alert 
+			if (data[d].preview.pair){ 
+				for (var p2 in data[d].preview.pair){ //for each pair in the alert 
 					alertPreviewString += '<p class="pair">' + 
-						data[d].preview.pair[p].key + '<span>' + 
-						data[d].preview.pair[p].value + '</span></p>';
+						data[d].preview.pair[p2].key + '<span>' + 
+						data[d].preview.pair[p2].value + '</span></p>';
 				}
 			}
 			alertPreviewString += '</a></li>';
@@ -240,24 +288,64 @@ $(document).ready(function() {
 		}
 		///////////if this alert requires acknowledgement	
 		if (data[id].detail.path && data[id].detail.path.length > 0) {  
-			alertDetailsString += '<form id="alert_ack_form" action=' + data[id].detail.path + ' method="post" >';
 			////////////if this is an 'advanced' acknowledgement
 			if (data[id].detail.response != null) {	
-				alertDetailsString += '<br><select name="alert_attempt[call_down_response]" >' + 
+				var doDetailAck = true;   ///// used on click. 
+				alertDetailsString += '<br><select id="ackAdvancedResponse">' + 
 					'<option value="" SELECTED>Select your response...</option>';
 				for (var o in data[id].detail.response ){
 					alertDetailsString += ' <option value="' + o + '">' + data[id].detail.response[o] + '</option>';
 				}	
 				alertDetailsString += '</select>';
 			}
-			alertDetailsString += 
-				'<a href="#alerts_pane" class="blueButton submit acknowledge">Acknowledge</a>' +
-				'<input name="_method" type="hidden" value="put">' + 
-				'<input name="authenticity_token" type="hidden" value="/">' +
-				'</form>';
-		}
+			alertDetailsString += '<a href="#" id="ackButton" class="blueButton submit" onclick>Acknowledge</a>'; 
+		}		
 		alertDetailsString += '</ul></li>';	
-		$('#alert_details').append(alertDetailsString);	
+		$('#alert_details').append(alertDetailsString);
+		$('#ackButton').click(function() {
+			if (doDetailAck) {
+				var detailResponse = $('#ackAdvancedResponse').val();
+				if (detailResponse == '') {
+					msg('You must select a response.');
+					return false;
+				} else {
+					$('#ackButton').text('working...');
+					responseData = {'alert_attempt[call_down_response]': detailResponse};
+					acknowledgeAlert(data[id].detail.path, responseData);
+				}
+			} else {
+				$('#ackButton').text('working...');
+				acknowledgeAlert(data[id].detail.path, '');
+			}
+		});	
+	}	
+	
+	function acknowledgeAlert(path, calldown){
+		var xhr = $.ajax({
+		   type: "GET",
+		   url: DOMAIN + path + '.json', 
+		   data: calldown,  
+			beforeSend: function(xhr) {
+				xhr.setRequestHeader("Cookie", getCookie()); 
+			},
+		   success: function(resp, text) {
+ 				if (xhr.status == 200) {        ///Hacky crappy workaround to jquery bug wherein EVERY response comes back 'success'
+ 					// everything ok
+ 					$('#ackButton').unbind('click');
+ 					$('#ackButton').text('Thank you.');
+ 					setTimeout(function() { $('#ackButton').fadeOut(); }, 2000);	
+ 				} else {
+   				// it's actually an error
+   				$('#ackButton').text('Acknowledge');
+   				msg('Network error. Alert NOT acknowledged.');
+ 				}
+			},
+		   error: function(xhr) {
+		   	//alert('no how no way: ' + xhr.statusText);
+				$('#ackButton').text('Acknowledge');
+		   	msg('Network error. (code: ack ' + xhr.statusText + ', ' + xhr.response + ')');
+			}
+		});
 	}	
 	
 	function fetchAlerts() {
@@ -270,28 +358,30 @@ $(document).ready(function() {
 		   success: function(data) {
 		   	hideMessageBox(); 
 		   	loadAlertsData(data);
-		   	},
+         },
 		   error: function(xhr) {
-		   	hideMessageBox();
+		   	$("#messageBox").text('Could not contact server.');
 				switch (xhr.status) {
 					case   0: msg("Loss connect by Carrier, use Wi-Fi to Access Data."); break;
-					default:  msg("Network error. (code: people " + xhr.status + ")"); 
+					default:  msg("Network error. (code: alerts " + xhr.status + ")"); 
 				}
 			}
 		});
 	}
 	
 	function loadAlertsData(data) {
-		populateAlertsPreviewPane(data); // stuff data into main alerts page
-		$("#alerts_preview li a").click(function(e) {		
-			var id = $(this).attr("alert_id")||0;	//
-			populateAlertDetailPane(data,id);  //fill the detail pane with data 
-		});
-		hideMessageBox();
-		return false;
+		if (data.length > 0 ){
+			populateAlertsPreviewPane(data); // stuff data into main alerts page
+			$("#alerts_preview li a").click(function(e) {		
+				var id = $(this).attr("alert_id")||0;	//
+				populateAlertDetailPane(data,id);  //fill the detail pane with data 
+			});
+			hideMessageBox();
+			return false;
+		}
 	};
 
-	// People Search			
+/////////////////////// People Search  //////////////////////			
 	
 	$('#people_search_pane').bind('pageAnimationStart', function(event, info){
 		if (info.direction == 'in') {
@@ -301,57 +391,6 @@ $(document).ready(function() {
 		}
 	});
 
-				
-// 	function fetchRoles() {
-// 		$('#people_roles_select').empty();
-// 		$('#people_roles_select').append('<p id="progress">Loading roles...</p>');
-// 		dataRequest = '{"request":{"method": "user_roles","only":["id","name"],"age": ' + getRolesAge() + '}}';
-// 		$.ajax({
-// 			type: "POST",
-// 			data: dataRequest , 
-// 			contentType: "application/json",
-// 			dataType: "json",
-// 			url: DOMAN + "/roles/mapping.json",
-// 			beforeSend: function(xhr) { xhr.setRequestHeader("Cookie", getCookie()); },
-// 			success: function(data) {
-// 				hideMessageBox();
-// 				setRoles(data);
-// 				$('#people_roles_select').processTemplate(getRoles());},
-// 			error: function(xhr) {
-// 				hideMessageBox();
-// 				switch (xhr.status) {
-// //					case   0: msg("Loss connect by Carrier, use Wi-Fi to Access Data."); break;
-// 					default:  msg("Network error. (code: people " + xhr.status + ")");}
-// 				}
-// 
-// 		});
-// 	}
-
-// 	function fetchJurisdictions() {
-// 		$('#people_jurisdictions_select').empty();
-// 		$('#people_jurisdictions_select').append('<p id="progress">Loading jurisdictions...</p>');
-// 		dataRequest = '{"request":{"method": "nonroot","only":["id","name"],"age": ' + getJurisdictionsAge() + '}}';
-// 		$.ajax({
-// 			type: "POST",
-// 			data: dataRequest ,
-// 			contentType: "application/json",
-// 			dataType: "json",
-// 			url: DOMAIN + "/jurisdictions/mapping.json",
-// 			beforeSend: function(xhr) { xhr.setRequestHeader("Cookie", getCookie()); },
-// 			success: function(data) {
-// 				hideMessageBox();
-// 				setJurisdictions(data);
-// 				$('#people_jurisdictions_select').processTemplate(getJurisdictions());},
-// 			error: function(xhr) {
-// 				hideMessageBox();
-// 				switch (xhr.status) {
-// //					case   0: msg("Loss connect by Carrier, use Wi-Fi to Access Data."); break;
-// 					default:  msg("Network error. (code: people " + xhr.status + ")");
-// 				}
-// 			}
-// 		});
-// 	}
-	
 	$('#people_pane').bind('pageAnimationStart', function(event, info){
 		if (info.direction == 'in') {
 			if(!$("#people_pane").data('loaded')) {   //don't hit the server again if there are already current search results 
@@ -449,15 +488,17 @@ $(document).ready(function() {
 		contactPaneString += '<p><input class="contactValue" name="phoneNumber" type="text" ' + phoneNumberString + ' ></p></li>';
 		contactPaneString += '<li><a id="create_contact" href="#people_pane" class="blueButton submit">Create</a></li></form></ul>';	
 		$('#new_contact').empty();
-		$('#new_contact').append(contactPaneString ); 		
+		$('#new_contact').append(contactPaneString );
+		$('#create_contact').bind("click",function(e) {
+			var firstName = $(".contactValue[name=firstName]").attr("value");
+			var lastName = $(".contactValue[name=lastName]").attr("value");
+			var phoneNumber = $(".contactValue[name=phoneNumber]").attr("value");
+			var contact = { 'firstName' : firstName, 'lastName' : lastName, 'phoneNumber' : phoneNumber };
+			navigator.contacts.newContact(contact, addContact_Return);
+		}); 		
 	}
 	
 }); // end document.ready 
-
-function newContact(contact,addContact_Return) {
-	try {navigator.contacts.newContact(contact, addContact_Return);}
-	catch(e) {alert(contact.firstName+" "+contact.lastName+" "+contact.phoneNumber);}
-}
 
 function addContact_Return(contact) {
 	if (contact) {

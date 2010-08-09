@@ -92,6 +92,15 @@ body.landscape .toolbar > h1 {
     -webkit-border-image: url(img/backButton.png) 0 8 0 14;
 }
 
+.forward{
+	 left: 6px;
+    right: auto;
+    padding: 0;
+    max-width: 55px;
+    border-width: 0 8px 0 14px;
+	-webkit-border-image: url(img/forwardButton.png) 0 8 0 14;
+}
+
 .leftButton, .cancel {
     left: 6px;
     right: auto;
