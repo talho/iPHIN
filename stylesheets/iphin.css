@@ -18,6 +18,10 @@ ul.people li p {font-weight: normal; font-size: 13px;}
 	font: bold 20px Helvetica !important;
 }
 
+.ackPreview{
+	background: #ffffe8
+}
+
 .homelogo{
 	background: #ffffff url('../images/home_graphic.png') no-repeat;
 }

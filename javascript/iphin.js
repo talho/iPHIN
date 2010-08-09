@@ -142,11 +142,13 @@ $(document).ready(function() {
 	function populateAlertsPreviewPane(data){
 		$('#alerts_preview').empty();
 		for (var d in data){  //for each alert
-			var alertPreviewString = '<li class="arrow"><a href="#alert_detail_pane" alert_id="' + d + '">';
+			var alertPreviewString = '<li class="arrow '; 
+			if (data[d].detail.path) {	alertPreviewString += 'ackPreview';	}   //add CSS class to distinguish alerts that need ack.
+			alertPreviewString += ' "><a href="#alert_detail_pane" alert_id="' + d + '">';
 			if (data[d].header && data[d].header.length > 0 ){
 				alertPreviewString += '<p class="header">' + data[d].header + '</p>';
 			}
-			if (data[d].preview.pair){
+			if (data[d].preview.pair){ 
 				for (p in data[d].preview.pair){ //for each pair in the alert 
 					alertPreviewString += '<p class="pair">' + 
 						data[d].preview.pair[p].key + '<span>' + 
