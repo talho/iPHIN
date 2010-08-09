@@ -256,35 +256,43 @@ $(document).ready(function() {
 		}
 		///////////if this alert requires acknowledgement	
 		if (data[id].detail.path && data[id].detail.path.length > 0) {  
-//			alertDetailsString += '<form id="alert_ack_form" action="' + DOMAIN + data[id].detail.path + '" method="post" >';
-//			////////////if this is an 'advanced' acknowledgement
-//			if (data[id].detail.response != null) {	
-//				alertDetailsString += '<br><select name="alert_attempt[call_down_response]" >' + 
-//					'<option value="" SELECTED>Select your response...</option>';
-//				for (var o in data[id].detail.response ){
-//					alertDetailsString += ' <option value="' + o + '">' + data[id].detail.response[o] + '</option>';
-//				}	
-//				alertDetailsString += '</select>';
-//			}
-			//alertDetailsString += 
-			//	'<a href="#alerts_pane" class="blueButton submit">Acknowledge</a>' +
-			//	'<input name="_method" type="hidden" value="put">' +
-			//	'<input name="authenticity_token" type="hidden" value="/">' +
-//				'</form>';
-				alertDetailsString += '<a href="#" id="ackButton" class="blueButton submit" onclick>Acknowledge</a>'; 
+			////////////if this is an 'advanced' acknowledgement
+			if (data[id].detail.response != null) {	
+				var doDetailAck = true;   ///// used on click. 
+				alertDetailsString += '<br><select id="ackAdvancedResponse">' + 
+					'<option value="" SELECTED>Select your response...</option>';
+				for (var o in data[id].detail.response ){
+					alertDetailsString += ' <option value="' + o + '">' + data[id].detail.response[o] + '</option>';
+				}	
+				alertDetailsString += '</select>';
+			}
+			alertDetailsString += '<a href="#" id="ackButton" class="blueButton submit" onclick>Acknowledge</a>'; 
 		}		
 		alertDetailsString += '</ul></li>';	
 		$('#alert_details').append(alertDetailsString);
 		$('#ackButton').click(function() {
-			$('#ackButton').text('working...');
-			acknowledgeAlert(data[id].detail.path);
+			if (doDetailAck) {
+				var detailResponse = $('#ackAdvancedResponse').val();
+				if (detailResponse == '') {
+					msg('You must select a response.');
+					return false;
+				} else {
+					$('#ackButton').text('working...');
+					responseData = {'alert_attempt[call_down_response]': detailResponse};
+					acknowledgeAlert(data[id].detail.path, responseData);
+				}
+			} else {
+				$('#ackButton').text('working...');
+				acknowledgeAlert(data[id].detail.path, '');
+			}
 		});	
 	}	
 	
-	function acknowledgeAlert(path){
+	function acknowledgeAlert(path, calldown){
 		var xhr = $.ajax({
 		   type: "GET",
-		   url: DOMAIN + path + '.json', // '/alerts/23/acknowledge' + '.json', //
+		   url: DOMAIN + path + '.json', 
+		   data: calldown,  
 			beforeSend: function(xhr) {
 				xhr.setRequestHeader("Cookie", getCookie()); 
 			},
