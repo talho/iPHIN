@@ -18,6 +18,11 @@ ul.people li p {font-weight: normal; font-size: 13px;}
 	font: bold 20px Helvetica !important;
 }
 
+.severityIcon{
+	float: left;
+	margin-right: 8px;
+}
+
 .ackPreview{
 	background: #ffffe8
 }

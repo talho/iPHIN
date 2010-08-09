@@ -1,25 +1,28 @@
 var PROTOCOL = "http://";
 //var HOST     = "localhost:3000";			 /* "www.txphin.org" release */
-var HOST     = "192.168.1.44:3000"
+var HOST     = "localhost:3000";
 var DOMAIN   = PROTOCOL + HOST;
 
 // Wait for PhoneGap to load
 function onBodyLoad() {	
-	document.addEventListener("deviceready",onDeviceReady,false);	}
+	document.addEventListener("deviceready",onDeviceReady,false);	
+}
 // PhoneGap is loaded and it is now safe to make calls PhoneGap methods
 function onDeviceReady() { 
 	try { navigator.network.isReachable(DOMAIN, reachableCallback); }
 	catch (e) {alert("Since this is not on the iPhone Network connection reporting could be erroreous.");}
-	}
+}
 // Check network status
 function reachableCallback(reachability) {
 	internetConnStatus = reachability.internetConnectionStatus;
 	wifiConnStatus = reachability.localWiFiConnectionStatus;
 	if (internetConnStatus == 0) {
 		if (wifiConnStatus == 1) { 
-			navigator.notification.alert("Loss Connect by Carrier, switch to Wi-Fi for Data Access.","TxPhin", "OK"); }
+			navigator.notification.alert("Loss Connect by Carrier, switch to Wi-Fi for Data Access.","TxPhin", "OK"); 
+		}
 		else if (wifiConnStatus == 0) { 
-			navigator.notification.alert("Loss Connect by Carrier and WiFi, relocate to get connection.","TxPhin", "OK"); }
+			navigator.notification.alert("Loss Connect by Carrier and WiFi, relocate to get connection.","TxPhin", "OK"); 
+		}
 	}
 }
 
@@ -160,7 +163,6 @@ $(document).ready(function() {
 	
 	$('a#signin').click(function(event) {
 		showMessageBox('auth', '#signin_fields');
-		//$('#signin').hide();
 		$.ajax({
 		   type: "POST",
 		   data: $('#signin_form').serialize(),
@@ -172,7 +174,7 @@ $(document).ready(function() {
 		   	 hideMessageBox();
 		   	 //$('#signin').show();
 				 setCookie(data);
-				 jQT.goTo($('#alerts_pane'), 'flip')
+				 jQT.goTo($('#alerts_pane'), 'flip');
 			 },
 		   error: function(xhr) {
 		   	hideMessageBox();
@@ -203,14 +205,36 @@ $(document).ready(function() {
 			var alertPreviewString = '<li class="arrow '; 
 			if (data[d].detail.path) {	alertPreviewString += 'ackPreview';	}   //add CSS class to distinguish alerts that need ack.
 			alertPreviewString += ' "><a href="#alert_detail_pane" alert_id="' + d + '">';
+			var severityIcon = 'images/status_unknown.png';
+			if (data[d].preview.pair ){	
+				for (var p1 in data[d].preview.pair){	
+					if (data[d].preview.pair[p1].key === 'Severity'){
+						switch(data[d].preview.pair[p1].value){
+							case 'Extreme': 
+								severityIcon = 'images/status_extreme.png';
+							break;
+							case 'Severe':
+								severityIcon = 'images/status_severe.png';
+							break;
+							case 'Moderate':
+								severityIcon = 'images/status_moderate.png';
+							break; 
+							case 'Minor':
+								severityIcon = 'images/status_minor.png';
+							break;
+						}
+					}	
+				}
+				alertPreviewString += '<img class="severityIcon" src="' + severityIcon + '">';
+			}
 			if (data[d].header && data[d].header.length > 0 ){
 				alertPreviewString += '<p class="header">' + data[d].header + '</p>';
 			}
 			if (data[d].preview.pair){ 
-				for (p in data[d].preview.pair){ //for each pair in the alert 
+				for (var p2 in data[d].preview.pair){ //for each pair in the alert 
 					alertPreviewString += '<p class="pair">' + 
-						data[d].preview.pair[p].key + '<span>' + 
-						data[d].preview.pair[p].value + '</span></p>';
+						data[d].preview.pair[p2].key + '<span>' + 
+						data[d].preview.pair[p2].value + '</span></p>';
 				}
 			}
 			alertPreviewString += '</a></li>';
@@ -296,26 +320,28 @@ $(document).ready(function() {
 		   	loadAlertsData(data);
          },
 		   error: function(xhr) {
-		   	hideMessageBox();
+		   	$("#messageBox").text('Could not contact server.');
 				switch (xhr.status) {
 					case   0: msg("Loss connect by Carrier, use Wi-Fi to Access Data."); break;
-					default:  msg("Network error. (code: people " + xhr.status + ")"); 
+					default:  msg("Network error. (code: alerts " + xhr.status + ")"); 
 				}
 			}
 		});
 	}
 	
 	function loadAlertsData(data) {
-		populateAlertsPreviewPane(data); // stuff data into main alerts page
-		$("#alerts_preview li a").click(function(e) {		
-			var id = $(this).attr("alert_id")||0;	//
-			populateAlertDetailPane(data,id);  //fill the detail pane with data 
-		});
-		hideMessageBox();
-		return false;
+		if (data.length > 0 ){
+			populateAlertsPreviewPane(data); // stuff data into main alerts page
+			$("#alerts_preview li a").click(function(e) {		
+				var id = $(this).attr("alert_id")||0;	//
+				populateAlertDetailPane(data,id);  //fill the detail pane with data 
+			});
+			hideMessageBox();
+			return false;
+		}
 	};
 
-	// People Search			
+/////////////////////// People Search  //////////////////////			
 	
 	$("#people_roles_select").setTemplateElement("role_select_template");
 	$("#people_jurisdictions_select").setTemplateElement("jurisdiction_select_template");
