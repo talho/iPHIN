@@ -138,6 +138,24 @@ $(document).ready(function() {
 	    $('body > *').css({minHeight: '460px !important'});
 	}
 
+	//set up [enter key] listener for login
+	$('#loginEmailField, #loginPasswordField').keypress(function(e) {
+        if(e.which == 13) {
+        		e.preventDefault();
+            jQuery(this).blur();
+            jQuery('#signin').focus().click();
+        }
+	});
+	
+	//set up [enter key] listener for people search
+	$('#people_search_form_first_name, #people_search_form_last_name, #people_search_form_email').keypress(function(e) {
+        if(e.which == 13) {
+        		e.preventDefault();
+            jQuery(this).blur();
+            jQuery('#quicksearch').focus().click();
+        }
+	});
+
 	// SignIn 
 	
 	$('a#signin').click(function(event) {
@@ -173,6 +191,10 @@ $(document).ready(function() {
 
 	$('#alerts_pane').bind('pageAnimationStart', function(event, info){
    	if (info.direction == 'in') fetchAlerts();
+	});
+	
+	$('#refreshAlertsButton').click(function(event) {  //refreshbutton binding
+		fetchAlerts();
 	});
 	
 	function populateAlertsPreviewPane(data){
