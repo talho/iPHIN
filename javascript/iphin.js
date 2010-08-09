@@ -1,6 +1,6 @@
 var PROTOCOL = "http://";
-//var HOST     = "localhost:3000";			 /* "www.txphin.org" release */
-var HOST     = "localhost:3000";
+// var HOST = "txphin.org" // for production
+var HOST = (/iphone/i.test(navigator.platform)) ? "192.168.1.44:3000" : "localhost:3000"
 var DOMAIN   = PROTOCOL + HOST;
 
 // Wait for PhoneGap to load
@@ -43,64 +43,39 @@ var jQT = new $.jQTouch({
   ]
 });
 
-try {		// for the iPhone and Safari browsers
+if(typeof sessionStorage == "undefined")
+  var sessionStorage = window;
+
+if(typeof localStorage == "undefined")
+  var localStorage = window;
+
 	function setCookie(data) {sessionStorage._cookie = data.cookie;}
 	function getCookie() {return sessionStorage._cookie;}
 
 	function setAlertDetail(data) {localStorage.alertDetail = data;}
 	function getAlertDetail() {return localStorage.alertDetail;}
 
-	function setRolesAge(age) {sessionStorage.rolesAge = age;}
-	function getRolesAge() {return sessionStorage.rolesAge||0 ;}
+	function setRolesExpiresOn(date) {localStorage.rolesExpiresOn = date;}
+	function rolesHasExpired() {return (Date() > new Date(localStorage.rolesExpiresOn||0)) ;}
 
-	function getRoles() {return JSON.parse(localStorage.roles)||[];}
+	function getRoles() {return JSON.parse(localStorage.roles||"[]");}
 	function setRoles(data) {
 		if (data.roles.length>0) {
 			localStorage.roles = JSON.stringify(data.roles);
-			setRolesAge(data.latest_in_secs);
+			setRolesExpiresOn(data.expires_on);
 		}
 	}
 
-	function setJurisdictionsAge(age) {sessionStorage.jurisdictionsAge = age;}
-	function getJurisdictionsAge() {return sessionStorage.jurisdictionsAge||0 ;}
+	function setJurisdictionsExpiresOn(date) {localStorage.jurisdictionExpiresOn = date;}
+	function jurisdictionsHasExpired() {return (Date() > new Date(localStorage.jurisdictionExpiresOn||0)) ;}
 
-	function getJurisdictions() {return JSON.parse(localStorage.jurisdictions)||[];}
+	function getJurisdictions() {return JSON.parse(localStorage.jurisdictions||"[]");}
 	function setJurisdictions(data) {
 		if (data.jurisdictions.length>0) {
 			localStorage.jurisdictions = JSON.stringify(data.jurisdictions);
-			setJurisdictionsAge(data.latest_in_secs);
+			setJurisdictionsExpiresOn(data.expires_on);
 		}
 	}
-}
-catch(e) {	// for FF and Chrome during development
-	function setCookie(data) {window._cookie = data.cookie;}
-	function getCookie() {return window._cookie;}
-
-	function setAlertDetail(data) {window.alertDetail = data;}
-	function getAlertDetail() {return window.alertDetail;}
-
-	function setRolesAge(age) {window.rolesAge = age;}
-	function getRolesAge() {return window.rolesAge||0 ;}
-
-	function getRoles() {return JSON.parse(window.roles)||[];}
-	function setRoles(data) {
-		if (data.roles.length>0) {
-			window.roles = JSON.stringify(data.roles);
-			setRolesAge(data.latest_in_secs);
-		}
-	}
-
-	function setJurisdictionsAge(age) {window.jurisdictionsAge = age;}
-	function getJurisdictionsAge() {return window.jurisdictionsAge||0 ;}
-
-	function getJurisdictions() {return JSON.parse(window.jurisdictions)||[];}
-	function setJurisdictions(data) {
-		if (data.jurisdictions.length>0) {
-			window.jurisdictions = JSON.stringify(data.jurisdictions);
-			setJurisdictionsAge(data.latest_in_secs);
-		}
-	}
-}
 
 
 function msg(message) {
@@ -174,7 +149,9 @@ $(document).ready(function() {
 		   	 hideMessageBox();
 		   	 //$('#signin').show();
 				 setCookie(data);
-				 jQT.goTo($('#alerts_pane'), 'flip');
+				 fetchRoles();
+				 fetchJurisdictions();
+				 jQT.goTo($('#alerts_pane'), 'flip')
 			 },
 		   error: function(xhr) {
 		   	hideMessageBox();
@@ -189,6 +166,61 @@ $(document).ready(function() {
 		return false;
 	});
 	
+	// Quietly fetch roles and jurisdictions 
+	
+	$("#people_roles_select").setTemplateElement("role_select_template");
+
+	function fetchRoles() {
+		var roles = getRoles();
+		if ((roles.length>0) && (!rolesHasExpired())) {
+			$('#people_roles_select').processTemplate(roles);
+		}
+		else {
+			$.ajax({
+			  type: "GET",
+				dataType: "json",
+				url: DOMAIN + "/roles.json",
+				beforeSend: function(xhr) { xhr.setRequestHeader("Cookie", getCookie()); },
+				success: function(data) {
+					setRoles(data);
+					$('#people_roles_select').processTemplate(data.roles);
+					},
+				error: function(xhr) {
+					switch (xhr.status) {
+	//					case   0: msg("Loss connect by Carrier, use Wi-Fi to Access Data."); break;
+						default:  msg("Network error. (code: people " + xhr.status + ")");}
+					}
+			});
+		};
+	}
+
+	$("#people_jurisdictions_select").setTemplateElement("jurisdiction_select_template");
+
+	function fetchJurisdictions() {
+		var jurisdictions = getJurisdictions();
+		if ((jurisdictions.length>0) && (!jurisdictionsHasExpired())) {
+			$('#people_jurisdictions_select').processTemplate(jurisdictions);
+		}
+		else {
+			$.ajax({
+			  type: "GET",
+				dataType: "json",
+				url: DOMAIN + "/jurisdictions.json",
+				beforeSend: function(xhr) { xhr.setRequestHeader("Cookie", getCookie()); },
+				success: function(data) {
+					setJurisdictions(data);
+					$('#people_jurisdictions_select').processTemplate(data.jurisdictions);
+					},
+				error: function(xhr) {
+					switch (xhr.status) {
+	//					case   0: msg("Loss connect by Carrier, use Wi-Fi to Access Data."); break;
+						default:  msg("Network error. (code: people " + xhr.status + ")");
+					}
+				}
+			});
+		};
+	}
+
 	// Load the Alert previews
 
 	$('#alerts_pane').bind('pageAnimationStart', function(event, info){
@@ -358,68 +390,14 @@ $(document).ready(function() {
 
 /////////////////////// People Search  //////////////////////			
 	
-	$("#people_roles_select").setTemplateElement("role_select_template");
-	$("#people_jurisdictions_select").setTemplateElement("jurisdiction_select_template");
-	
 	$('#people_search_pane').bind('pageAnimationStart', function(event, info){
 		if (info.direction == 'in') {
-    		fetchRoles(); 
-			fetchJurisdictions();
+			//     		fetchRoles(); 
+			// fetchJurisdictions();
+			// setRoles(data);
 		}
 	});
 
-	
-			
-	function fetchRoles() {
-		$('#people_roles_select').empty();
-		$('#people_roles_select').append('<p id="progress">Loading roles...</p>');
-		dataRequest = '{"request":{"method": "user_roles","only":["id","name"],"age": ' + getRolesAge() + '}}';
-		$.ajax({
-			type: "POST",
-			data: dataRequest , 
-			contentType: "application/json",
-			dataType: "json",
-			url: "http://localhost:3000/roles/mapping.json",
-			beforeSend: function(xhr) { xhr.setRequestHeader("Cookie", getCookie()); },
-			success: function(data) {
-				hideMessageBox();
-				setRoles(data);
-				$('#people_roles_select').processTemplate(getRoles());},
-			error: function(xhr) {
-				hideMessageBox();
-				switch (xhr.status) {
-//					case   0: msg("Loss connect by Carrier, use Wi-Fi to Access Data."); break;
-					default:  msg("Network error. (code: people " + xhr.status + ")");}
-				}
-
-		});
-	}
-
-	function fetchJurisdictions() {
-		$('#people_jurisdictions_select').empty();
-		$('#people_jurisdictions_select').append('<p id="progress">Loading jurisdictions...</p>');
-		dataRequest = '{"request":{"method": "nonroot","only":["id","name"],"age": ' + getJurisdictionsAge() + '}}';
-		$.ajax({
-			type: "POST",
-			data: dataRequest ,
-			contentType: "application/json",
-			dataType: "json",
-			url: "http://localhost:3000/jurisdictions/mapping.json",
-			beforeSend: function(xhr) { xhr.setRequestHeader("Cookie", getCookie()); },
-			success: function(data) {
-				hideMessageBox();
-				setJurisdictions(data);
-				$('#people_jurisdictions_select').processTemplate(getJurisdictions());},
-			error: function(xhr) {
-				hideMessageBox();
-				switch (xhr.status) {
-//					case   0: msg("Loss connect by Carrier, use Wi-Fi to Access Data."); break;
-					default:  msg("Network error. (code: people " + xhr.status + ")");
-				}
-			}
-		});
-	}
-	
 	$('#people_pane').bind('pageAnimationStart', function(event, info){
 		if (info.direction == 'in') {
 			if(!$("#people_pane").data('loaded')) {   //don't hit the server again if there are already current search results 
