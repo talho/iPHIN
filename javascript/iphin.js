@@ -502,15 +502,17 @@ $(document).ready(function() {
 		contactPaneString += '<p><input class="contactValue" name="phoneNumber" type="text" ' + phoneNumberString + ' ></p></li>';
 		contactPaneString += '<li><a id="create_contact" href="#people_pane" class="blueButton submit">Create</a></li></form></ul>';	
 		$('#new_contact').empty();
-		$('#new_contact').append(contactPaneString ); 		
+		$('#new_contact').append(contactPaneString );
+		$('#create_contact').bind("click",function(e) {
+			var firstName = $(".contactValue[name=firstName]").attr("value");
+			var lastName = $(".contactValue[name=lastName]").attr("value");
+			var phoneNumber = $(".contactValue[name=phoneNumber]").attr("value");
+			var contact = { 'firstName' : firstName, 'lastName' : lastName, 'phoneNumber' : phoneNumber };
+			navigator.contacts.newContact(contact, addContact_Return);
+		}); 		
 	}
 	
 }); // end document.ready 
-
-function newContact(contact,addContact_Return) {
-	try {navigator.contacts.newContact(contact, addContact_Return);}
-	catch(e) {alert(contact.firstName+" "+contact.lastName+" "+contact.phoneNumber);}
-}
 
 function addContact_Return(contact) {
 	if (contact) {
