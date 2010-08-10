@@ -49,8 +49,8 @@ var jQT = new $.jQTouch({
 //if(typeof localStorage == "undefined")
 //  var localStorage = window;
 
-	function setCookie(data) {window._cookie = data.cookie;}
-	function getCookie() {return window._cookie;}
+	function setCookie(data) {sessionStorage._cookie = data.cookie;}
+	function getCookie() {return sessionStorage._cookie;}
 
 	function setAlertDetail(data) {localStorage.alertDetail = data;}
 	function getAlertDetail() {return localStorage.alertDetail;}
@@ -168,9 +168,6 @@ $(document).ready(function() {
 	
 	// Quietly fetch roles and jurisdictions 
 	
-	//$("#people_roles_select").setTemplateElement("role_select_template");
-	//$("#people_jurisdictions_select").setTemplateElement("jurisdiction_select_template");
-
 	function fetchRoles() {
 		var roles = getRoles();
 		if ((roles.length>0) && (!rolesHasExpired())) {
@@ -259,6 +256,9 @@ $(document).ready(function() {
 	
 	$('#alert_detail_pane').bind('pageAnimationStart', function(event, info){
 		if (info.direction == 'in') {
+			var id = $(this).data('referrer').attr('alert_id');
+			var data = $('#alerts_preview').data('alertsData'); 
+			populateAlertDetailPane(data,id) 
 			$('#alerts_pane').data('loaded', true);
 		}
 	});	
@@ -267,17 +267,18 @@ $(document).ready(function() {
 		fetchAlerts();
 	});
 	
-	function populateAlertsPreviewPane(data){
+	function populateAlertsPreviewPane(alertsData){
 		$('#alerts_preview').empty();
-		for (var d in data){  //for each alert
+		$('#alerts_preview').data('alertsData', alertsData);  //store the fetched alerts data
+		for (var d in alertsData){  //for each alert
 			var alertPreviewString = '<li class="arrow '; 
-			if (data[d].detail.path) {	alertPreviewString += 'ackPreview';	}   //add CSS class to distinguish alerts that need ack.
+			if (alertsData[d].detail.path) {	alertPreviewString += 'ackPreview';	}   //add CSS class to distinguish alerts that need ack.
 			alertPreviewString += ' "><a href="#alert_detail_pane" class="detailLink" alert_id="' + d + '">';
 			var severityIcon = 'images/status_unknown.png';
-			if (data[d].preview.pair ){	
-				for (var p1 in data[d].preview.pair){	
-					if (data[d].preview.pair[p1].key === 'Severity'){
-						switch(data[d].preview.pair[p1].value){
+			if (alertsData[d].preview.pair ){	///would really like to reform JSON so we don't have to loop like this
+				for (var p1 in alertsData[d].preview.pair){	
+					if (alertsData[d].preview.pair[p1].key === 'Severity'){
+						switch(alertsData[d].preview.pair[p1].value){
 							case 'Extreme': 
 								severityIcon = 'images/status_extreme.png';
 							break;
@@ -295,23 +296,23 @@ $(document).ready(function() {
 				}
 				alertPreviewString += '<img class="severityIcon" src="' + severityIcon + '">';
 			}
-			if (data[d].header && data[d].header.length > 0 ){
-				alertPreviewString += '<p class="header">' + data[d].header + '</p>';
+			if (alertsData[d].header && alertsData[d].header.length > 0 ){
+				alertPreviewString += '<p class="header">' + alertsData[d].header + '</p>';
 			}
-			if (data[d].preview.pair){ 
-				for (var p2 in data[d].preview.pair){ //for each pair in the alert 
+			if (alertsData[d].preview.pair){ 
+				for (var p2 in alertsData[d].preview.pair){ //for each pair in the alert 
 					alertPreviewString += '<p class="pair">' + 
-						data[d].preview.pair[p2].key + '<span>' + 
-						data[d].preview.pair[p2].value + '</span></p>';
+						alertsData[d].preview.pair[p2].key + '<span>' + 
+						alertsData[d].preview.pair[p2].value + '</span></p>';
 				}
 			}
 			alertPreviewString += '</a></li>';
 		$('#alerts_preview').append(alertPreviewString);
 		}
-	$(".detailLink").click(function(e) {					
-			var id = $(this).attr("alert_id")||0;	//
-			populateAlertDetailPane(data,id);  //fill the detail pane with data 
-		});
+//	$(".detailLink").click(function(e) {					
+//			var id = $(this).attr('alert_id')||0;	//
+//			populateAlertDetailPane(data,id);  //fill the detail pane with data 
+//		});
 	}	
 	
 	function populateAlertDetailPane(data, id) { //Build an html string from the JSON data and append it to alert_details.  This is messy :(
