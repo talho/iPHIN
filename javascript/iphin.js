@@ -187,7 +187,6 @@ $(document).ready(function() {
 				success: function(data) {
 					setRoles(data);
 					populateRolesSelector(roles);
-					//$('#people_roles_select').processTemplate(data.roles);
 					},
 				error: function(xhr) {
 					switch (xhr.status) {
@@ -213,7 +212,6 @@ $(document).ready(function() {
 				success: function(data) {
 					setJurisdictions(data);
 					populateJurisdictionsSelector(jurisdictions);
-					//$('#people_jurisdictions_select').processTemplate(data.jurisdictions);
 					},
 				error: function(xhr) {
 					switch (xhr.status) {
@@ -228,7 +226,7 @@ $(document).ready(function() {
 	function populateRolesSelector(roles){
 		var rolesSelectString = 
 			'<select name="[role_ids][]" multiple="multiple">' +
-			'<option value="" SELECTED>Role...</option>';
+			'<option value="" SELECTED>Any Role...</option>';
 		for (var r in roles){
 			rolesSelectString += '<option value="' + roles[r].id + '">' + roles[r].name + '</option>';
 		}
@@ -239,7 +237,7 @@ $(document).ready(function() {
 	function populateJurisdictionsSelector(jurisdictions){
 		var jurisdictionsSelectString = 
 			'<select name="[jurisdiction_ids][]" multiple="multiple">' +
-			'<option value="" SELECTED>Jurisdiction...</option>';
+			'<option value="" SELECTED>Any Jurisdiction...</option>';
 		for (var j in jurisdictions){
 			jurisdictionsSelectString += '<option value="' + jurisdictions[j].id + '">' + jurisdictions[j].name + '</option>';
 		}
@@ -274,7 +272,7 @@ $(document).ready(function() {
 		for (var d in data){  //for each alert
 			var alertPreviewString = '<li class="arrow '; 
 			if (data[d].detail.path) {	alertPreviewString += 'ackPreview';	}   //add CSS class to distinguish alerts that need ack.
-			alertPreviewString += ' "><a href="#alert_detail_pane" alert_id="' + d + '">';
+			alertPreviewString += ' "><a href="#alert_detail_pane" class="detailLink" alert_id="' + d + '">';
 			var severityIcon = 'images/status_unknown.png';
 			if (data[d].preview.pair ){	
 				for (var p1 in data[d].preview.pair){	
@@ -309,11 +307,11 @@ $(document).ready(function() {
 			}
 			alertPreviewString += '</a></li>';
 		$('#alerts_preview').append(alertPreviewString);
-		$("#alerts_preview li a").click(function(e) {		
-				var id = $(this).attr("alert_id")||0;	//
-				populateAlertDetailPane(data,id);  //fill the detail pane with data 
-			});
 		}
+	$(".detailLink").click(function(e) {					
+			var id = $(this).attr("alert_id")||0;	//
+			populateAlertDetailPane(data,id);  //fill the detail pane with data 
+		});
 	}	
 	
 	function populateAlertDetailPane(data, id) { //Build an html string from the JSON data and append it to alert_details.  This is messy :(
