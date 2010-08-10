@@ -11,7 +11,6 @@
     <script charset='utf-8' src='javascript/phonegap.js'                     type='text/javascript'></script>
 		<script charset='utf-8' src='javascript/jquery.js'               type='text/javascript'></script>
     <script charset='utf-8' src='javascript/jqtouch.js'              type='text/javascript'></script>
-    <script charset='utf-8' src='javascript/jquery-jtemplates.js' type='text/javascript'></script>
     <script charset='utf-8' src='javascript/jquery.ba-serializeobject.min.js' type='text/javascript'></script>
     <script charset='utf-8' src='javascript/iphin.js'             type='text/javascript'></script>
   </head>
@@ -120,20 +119,3 @@
 
 <!-- new_contact_template no longer exists -->
 
-<p style="display:none"><textarea id="role_select_template" rows="0" cols="0"><!--
-  <select name="[role_ids][]" multiple="multiple">
-    <option value="" SELECTED>Role...</option>
-    {#foreach $T as option}
-      <option value={$T.option.id}>{$T.option.name}</option>
-    {#/for}
-  </select>
---></textarea></p> 
-
-<p style="display:none"><textarea id="jurisdiction_select_template" rows="0" cols="0"><!--
-  <select name="[jurisdiction_ids][]" multiple="multiple">
-    <option value="" SELECTED>Jurisdiction...</option>
-    {#foreach $T as option}
-      <option value={$T.option.id}>{$T.option.name}</option>
-    {#/for}
-  </select>
---></textarea></p> 

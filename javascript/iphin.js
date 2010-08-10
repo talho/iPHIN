@@ -43,14 +43,14 @@ var jQT = new $.jQTouch({
   ]
 });
 
-if(typeof sessionStorage == "undefined")
-  var sessionStorage = window;
+//if(typeof sessionStorage == "undefined")
+//  var sessionStorage = window;
 
-if(typeof localStorage == "undefined")
-  var localStorage = window;
+//if(typeof localStorage == "undefined")
+//  var localStorage = window;
 
-	function setCookie(data) {sessionStorage._cookie = data.cookie;}
-	function getCookie() {return sessionStorage._cookie;}
+	function setCookie(data) {window._cookie = data.cookie;}
+	function getCookie() {return window._cookie;}
 
 	function setAlertDetail(data) {localStorage.alertDetail = data;}
 	function getAlertDetail() {return localStorage.alertDetail;}
@@ -168,22 +168,26 @@ $(document).ready(function() {
 	
 	// Quietly fetch roles and jurisdictions 
 	
-	$("#people_roles_select").setTemplateElement("role_select_template");
+	//$("#people_roles_select").setTemplateElement("role_select_template");
+	//$("#people_jurisdictions_select").setTemplateElement("jurisdiction_select_template");
 
 	function fetchRoles() {
 		var roles = getRoles();
 		if ((roles.length>0) && (!rolesHasExpired())) {
-			$('#people_roles_select').processTemplate(roles);
+			populateRolesSelector(roles);
+			//$('#people_roles_select').processTemplate(roles);
 		}
 		else {
 			$.ajax({
-			  type: "GET",
-				dataType: "json",
-				url: DOMAIN + "/roles.json",
-				beforeSend: function(xhr) { xhr.setRequestHeader("Cookie", getCookie()); },
+			  type: "POST",
+		   //data: $('#signin_form').serialize(),
+		   dataType: "json",
+		   url: DOMAIN + "/roles.json",
+		   beforeSend: function(xhr) { xhr.setRequestHeader("Cookie", getCookie()); },
 				success: function(data) {
 					setRoles(data);
-					$('#people_roles_select').processTemplate(data.roles);
+					populateRolesSelector(roles);
+					//$('#people_roles_select').processTemplate(data.roles);
 					},
 				error: function(xhr) {
 					switch (xhr.status) {
@@ -194,12 +198,11 @@ $(document).ready(function() {
 		};
 	}
 
-	$("#people_jurisdictions_select").setTemplateElement("jurisdiction_select_template");
-
 	function fetchJurisdictions() {
 		var jurisdictions = getJurisdictions();
 		if ((jurisdictions.length>0) && (!jurisdictionsHasExpired())) {
-			$('#people_jurisdictions_select').processTemplate(jurisdictions);
+			populateJurisdictionsSelector(jurisdictions);
+			//$('#people_jurisdictions_select').processTemplate(jurisdictions);
 		}
 		else {
 			$.ajax({
@@ -209,7 +212,8 @@ $(document).ready(function() {
 				beforeSend: function(xhr) { xhr.setRequestHeader("Cookie", getCookie()); },
 				success: function(data) {
 					setJurisdictions(data);
-					$('#people_jurisdictions_select').processTemplate(data.jurisdictions);
+					populateJurisdictionsSelector(jurisdictions);
+					//$('#people_jurisdictions_select').processTemplate(data.jurisdictions);
 					},
 				error: function(xhr) {
 					switch (xhr.status) {
@@ -220,6 +224,29 @@ $(document).ready(function() {
 			});
 		};
 	}
+
+	function populateRolesSelector(roles){
+		var rolesSelectString = 
+			'<select name="[role_ids][]" multiple="multiple">' +
+			'<option value="" SELECTED>Role...</option>';
+		for (var r in roles){
+			rolesSelectString += '<option value="' + roles[r].id + '">' + roles[r].name + '</option>';
+		}
+		rolesSelectString += '</select>';
+		$('#people_roles_select').html(rolesSelectString); 	
+	}
+	
+	function populateJurisdictionsSelector(jurisdictions){
+		var jurisdictionsSelectString = 
+			'<select name="[jurisdiction_ids][]" multiple="multiple">' +
+			'<option value="" SELECTED>Jurisdiction...</option>';
+		for (var j in jurisdictions){
+			jurisdictionsSelectString += '<option value="' + jurisdictions[j].id + '">' + jurisdictions[j].name + '</option>';
+		}
+		jurisdictionsSelectString += '</select>';
+		$('#people_jurisdictions_select').html(jurisdictionsSelectString); 
+	}
+
 
 	// Load the Alert previews
 	
@@ -282,6 +309,10 @@ $(document).ready(function() {
 			}
 			alertPreviewString += '</a></li>';
 		$('#alerts_preview').append(alertPreviewString);
+		$("#alerts_preview li a").click(function(e) {		
+				var id = $(this).attr("alert_id")||0;	//
+				populateAlertDetailPane(data,id);  //fill the detail pane with data 
+			});
 		}
 	}	
 	
@@ -398,10 +429,6 @@ $(document).ready(function() {
 	function loadAlertsData(data) {
 		if (data.length > 0 ){
 			populateAlertsPreviewPane(data); // stuff data into main alerts page
-			$("#alerts_preview li a").mouseup(function(e) {		
-				var id = $(this).attr("alert_id")||0;	//
-				populateAlertDetailPane(data,id);  //fill the detail pane with data 
-			});
 			hideMessageBox();
 			return false;
 		}
