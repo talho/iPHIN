@@ -240,28 +240,28 @@ $(document).ready(function() {
 		   dataType: "json",
 		   url: DOMAIN + "/han.json",
 			 beforeSend: function(xhr) { xhr.setRequestHeader("Cookie", getCookie()); },
-		   success: function(data) {
-		   	hideMessageBox(); 
+		   success: function(data) { 
 		   	populateAlertsPreviewPane(data); // stuff data into main alerts page
          },
 		   error: function(xhr) {
 				switch (xhr.status) {
-					case   0: msg("Loss connect by Carrier, use Wi-Fi to Access Data.");
-						$("#messageBox").text('Could not contact server.'); 
+					case  0: 
+						msg("Loss connect by Carrier, use Wi-Fi to Access Data.");			 
 					break;			
-					case 404:
-						$("#messageBox").text('No alerts at this time.');
-					break; 
 					default: 
-						 msg("Network error. (code: alerts " + xhr.status + ")");
-						 $("#messageBox").text('Could not contact server.');
-					break;  
+						msg("Network error. (code: alerts " + xhr.status + ")");
+					break;  		
 				}
+				$("#messageBox").text('Could not contact server.');
 			}
 		});
 	}	
 		
 	function populateAlertsPreviewPane(alertsData){
+		if (!alertsData.length > 0) { 
+			 $("#messageBox").text('No alerts at this time.');
+			 return false;
+		}
 		hideMessageBox();
 		$('#alerts_preview').empty();
 		$('#alerts_preview').data('alertsData', alertsData);  //store the fetched alerts data
@@ -450,7 +450,7 @@ $(document).ready(function() {
 			for (var d in resultsData){
 				var personResultString = 
 					'<ul id="people" class="people edgetoedge"><li class="person arrow">' + 
-					'<a href="#new_contact_pane" class="pop" contact_id="'+ d + '">'; // **THIS BREAKS BADLY WITHOUT CLASS="SWAP".  NO, I DON'T KNOW WHY***
+					'<a href="#new_contact_pane" class="slideup" contact_id="'+ d + '">'; // **THIS BREAKS WITHOUT ANIMATION CLASS.  NO, I DON'T KNOW WHY***
 				if (resultsData[d].header && resultsData[d].header.length > 0){  						////contact name 
 					personResultString += '<p class="header">' + resultsData[d].header + '</p>';  
 				} 
