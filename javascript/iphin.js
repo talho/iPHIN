@@ -43,12 +43,6 @@ var jQT = new $.jQTouch({
   ]
 });
 
-//if(typeof sessionStorage == "undefined")
-//  var sessionStorage = window;
-
-//if(typeof localStorage == "undefined")
-//  var localStorage = window;
-
 	function setCookie(data) {sessionStorage._cookie = data.cookie;}
 	function getCookie() {return sessionStorage._cookie;}
 
@@ -134,7 +128,7 @@ $(document).ready(function() {
         }
 	});
 
-	// SignIn 
+////////////////////////// Initial setup ////////////////////////// 
 	
 	$('a#signin').click(function(event) {
 		showMessageBox('auth', '#signin_fields');
@@ -167,27 +161,23 @@ $(document).ready(function() {
 	});
 	
 	// Quietly fetch roles and jurisdictions 
-	
 	function fetchRoles() {
 		var roles = getRoles();
 		if ((roles.length>0) && (!rolesHasExpired())) {
 			populateRolesSelector(roles);
-			//$('#people_roles_select').processTemplate(roles);
 		}
 		else {
 			$.ajax({
-			  type: "POST",
-		   //data: $('#signin_form').serialize(),
-		   dataType: "json",
-		   url: DOMAIN + "/roles.json",
-		   beforeSend: function(xhr) { xhr.setRequestHeader("Cookie", getCookie()); },
+				type: "POST",
+		  		dataType: "json",
+		 		url: DOMAIN + "/roles.json",
+		  		beforeSend: function(xhr) { xhr.setRequestHeader("Cookie", getCookie()); },
 				success: function(data) {
 					setRoles(data);
 					populateRolesSelector(roles);
 					},
 				error: function(xhr) {
 					switch (xhr.status) {
-	//					case   0: msg("Loss connect by Carrier, use Wi-Fi to Access Data."); break;
 						default:  msg("Network error. (code: people " + xhr.status + ")");}
 					}
 			});
@@ -198,7 +188,6 @@ $(document).ready(function() {
 		var jurisdictions = getJurisdictions();
 		if ((jurisdictions.length>0) && (!jurisdictionsHasExpired())) {
 			populateJurisdictionsSelector(jurisdictions);
-			//$('#people_jurisdictions_select').processTemplate(jurisdictions);
 		}
 		else {
 			$.ajax({
@@ -212,7 +201,6 @@ $(document).ready(function() {
 					},
 				error: function(xhr) {
 					switch (xhr.status) {
-	//					case   0: msg("Loss connect by Carrier, use Wi-Fi to Access Data."); break;
 						default:  msg("Network error. (code: people " + xhr.status + ")");
 					}
 				}
@@ -243,31 +231,38 @@ $(document).ready(function() {
 	}
 
 
-	// Load the Alert previews
+////////////////////////////// Alerts ///////////////////////////////////
 	
-	$('#alerts_pane').bind('pageAnimationStart', function(event, info){
-   	if (info.direction == 'in') {
-   		if (!$("#alerts_pane").data('loaded')){
-   			fetchAlerts();
-   		}
-   		$('#alerts_pane').data('loaded', false);
-   	}
-	});
-	
-	$('#alert_detail_pane').bind('pageAnimationStart', function(event, info){
-		if (info.direction == 'in') {
-			var id = $(this).data('referrer').attr('alert_id');
-			var data = $('#alerts_preview').data('alertsData'); 
-			populateAlertDetailPane(data,id) 
-			$('#alerts_pane').data('loaded', true);
-		}
-	});	
-	
-	$('#refreshAlertsButton').click(function(event) {  //refreshbutton binding
-		fetchAlerts();
-	});
-	
+	function fetchAlerts() {
+		showMessageBox('loadingalerts', '#alerts_preview');
+		$.ajax({
+		   type: "GET",
+		   dataType: "json",
+		   url: DOMAIN + "/han.json",
+			 beforeSend: function(xhr) { xhr.setRequestHeader("Cookie", getCookie()); },
+		   success: function(data) {
+		   	hideMessageBox(); 
+		   	populateAlertsPreviewPane(data); // stuff data into main alerts page
+         },
+		   error: function(xhr) {
+				switch (xhr.status) {
+					case   0: msg("Loss connect by Carrier, use Wi-Fi to Access Data.");
+						$("#messageBox").text('Could not contact server.'); 
+					break;			
+					case 404:
+						$("#messageBox").text('No alerts at this time.');
+					break; 
+					default: 
+						 msg("Network error. (code: alerts " + xhr.status + ")");
+						 $("#messageBox").text('Could not contact server.');
+					break;  
+				}
+			}
+		});
+	}	
+		
 	function populateAlertsPreviewPane(alertsData){
+		hideMessageBox();
 		$('#alerts_preview').empty();
 		$('#alerts_preview').data('alertsData', alertsData);  //store the fetched alerts data
 		for (var d in alertsData){  //for each alert
@@ -275,7 +270,7 @@ $(document).ready(function() {
 			if (alertsData[d].detail.path) {	alertPreviewString += 'ackPreview';	}   //add CSS class to distinguish alerts that need ack.
 			alertPreviewString += ' "><a href="#alert_detail_pane" class="detailLink" alert_id="' + d + '">';
 			var severityIcon = 'images/status_unknown.png';
-			if (alertsData[d].preview.pair ){	///would really like to reform JSON so we don't have to loop like this
+			if (alertsData[d].preview.pair ){	///would really like to reform JSON so we don't have to loop like this 
 				for (var p1 in alertsData[d].preview.pair){	
 					if (alertsData[d].preview.pair[p1].key === 'Severity'){
 						switch(alertsData[d].preview.pair[p1].value){
@@ -309,10 +304,6 @@ $(document).ready(function() {
 			alertPreviewString += '</a></li>';
 		$('#alerts_preview').append(alertPreviewString);
 		}
-//	$(".detailLink").click(function(e) {					
-//			var id = $(this).attr('alert_id')||0;	//
-//			populateAlertDetailPane(data,id);  //fill the detail pane with data 
-//		});
 	}	
 	
 	function populateAlertDetailPane(data, id) { //Build an html string from the JSON data and append it to alert_details.  This is messy :(
@@ -397,67 +388,31 @@ $(document).ready(function() {
 		});
 	}	
 	
-	function fetchAlerts() {
-		showMessageBox('loadingalerts', '#alerts_preview');
-		$.ajax({
-		   type: "GET",
-		   dataType: "json",
-		   url: DOMAIN + "/han.json",
-			 beforeSend: function(xhr) { xhr.setRequestHeader("Cookie", getCookie()); },
-		   success: function(data) {
-		   	hideMessageBox(); 
-		   	loadAlertsData(data);
-         },
-		   error: function(xhr) {
-				switch (xhr.status) {
-					case   0: msg("Loss connect by Carrier, use Wi-Fi to Access Data.");
-						$("#messageBox").text('Could not contact server.'); 
-					break;			
-					case 404:
-						$("#messageBox").text('No alerts at this time.');
-					break; 
-					default: 
-						 msg("Network error. (code: alerts " + xhr.status + ")");
-						 $("#messageBox").text('Could not contact server.');
-					break;  
-				}
-			}
-		});
-	}
-	
-	function loadAlertsData(data) {
-		if (data.length > 0 ){
-			populateAlertsPreviewPane(data); // stuff data into main alerts page
-			hideMessageBox();
-			return false;
-		}
-	};
-
-/////////////////////// People Search  //////////////////////			
-	
-	$('#people_search_pane').bind('pageAnimationStart', function(event, info){
-		if (info.direction == 'in') {
-			//     		fetchRoles(); 
-			// fetchJurisdictions();
-			// setRoles(data);
-		}
+	///////////// Alerts bindings /////////////
+	$('#alerts_pane').bind('pageAnimationStart', function(event, info){
+   	if (info.direction == 'in') {
+   		if (!$("#alerts_pane").data('loaded')){
+   			fetchAlerts();
+   		}
+   		$('#alerts_pane').data('loaded', false);
+   	}
 	});
 	
-	$('#people_pane').bind('pageAnimationStart', function(event, info){
+	$('#alert_detail_pane').bind('pageAnimationStart', function(event, info){
 		if (info.direction == 'in') {
-			if(!$("#people_pane").data('loaded')) {   //don't hit the server again if there are already current search results 
-				$('#people_results').empty();
-    			makeSearchRequest();
-    		}
-    		$('#people_pane').data('loaded', false);
+			var id = $(this).data('referrer').attr('alert_id');
+			var data = $('#alerts_preview').data('alertsData'); 
+			populateAlertDetailPane(data,id) 
+			$('#alerts_pane').data('loaded', true);
 		}
-	});
+	});	
 	
-	$('#new_contact_pane').bind('pageAnimationStart', function(event, info){
-		if (info.direction == 'in') {
-    		$('#people_pane').data('loaded', true);  
-    	}
-	});
+	$('#refreshAlertsButton').click(function(event) {  //refreshbutton binding
+		fetchAlerts();
+	});	
+		
+		
+/////////////////////// People Search  //////////////////////				
 	
 	// takes the contents of #people_search_form, gets results form the server, and fires the populate function on success 
 	function makeSearchRequest(){  
@@ -476,7 +431,7 @@ $(document).ready(function() {
 		   url: DOMAIN + "/search/show_advanced.json",
 			 beforeSend: function(xhr) { xhr.setRequestHeader("Cookie", getCookie()); },
 		   success: function(data) { 
-		   	loadPeopleData(data);
+		   	populatePeopleResultsPane(data);
 		   },
 		   error: function(xhr) {
 		   	hideMessageBox();
@@ -489,26 +444,19 @@ $(document).ready(function() {
 		});//end $.ajax	 
 	}	
 
-	function loadPeopleData(data) {
-		populatePeopleResultsPane(data);		
-		$("#people_results li a").click(function(e) {		
-			var id = $(this).attr("contact_id")||0;	 	//grab the id of clicked contact 
-			populateNewContactPane(data, id);  		//fill the detail pane with data 
-		});
-	};
-
-	function populatePeopleResultsPane(data){	
-		if(data.length > 0){
-			for (var d in data){
+	function populatePeopleResultsPane(resultsData){	
+		if(resultsData.length > 0){
+			$('#people_pane').data('peopleResultsData', resultsData);  //store the fetched alerts data
+			for (var d in resultsData){
 				var personResultString = 
 					'<ul id="people" class="people edgetoedge"><li class="person arrow">' + 
-					'<a href="#new_contact_pane" class="swap" contact_id="'+ d + '">'; // **THIS BREAKS BADLY WITHOUT CLASS="SWAP".  NO, I DON'T KNOW WHY***
-				if (data[d].header && data[d].header.length > 0){  						////contact name 
-					personResultString += '<p class="header">' + data[d].header + '</p>';  
+					'<a href="#new_contact_pane" class="pop" contact_id="'+ d + '">'; // **THIS BREAKS BADLY WITHOUT CLASS="SWAP".  NO, I DON'T KNOW WHY***
+				if (resultsData[d].header && resultsData[d].header.length > 0){  						////contact name 
+					personResultString += '<p class="header">' + resultsData[d].header + '</p>';  
 				} 
-				for (var p in data[d].preview.pair){
-					if (data[d].preview.pair[p].key){
-						personResultString += '<p>' + data[d].preview.pair[p].key + '</p>';
+				for (var p in resultsData[d].preview.pair){
+					if (resultsData[d].preview.pair[p].key){
+						personResultString += '<p>' + resultsData[d].preview.pair[p].key + '</p>';
 					}
 				}
 				personResultString += '</a></li></ul>';
@@ -550,6 +498,35 @@ $(document).ready(function() {
 			navigator.contacts.newContact(contact, addContact_Return);
 		}); 		
 	}
+	
+	////////////////// People bindings //////////////
+		
+	$('#people_search_pane').bind('pageAnimationStart', function(event, info){
+		if (info.direction == 'in') {
+			// fetchRoles(); 
+			// fetchJurisdictions();
+			// setRoles(data);
+		}
+	});
+	
+	$('#people_pane').bind('pageAnimationStart', function(event, info){
+		if (info.direction == 'in') {
+			if(!$("#people_pane").data('loaded')) {   //don't hit the server again if there are already current search results 
+				$('#people_results').empty();
+    			makeSearchRequest();
+    		}
+    		$('#people_pane').data('loaded', false);
+		}
+	});
+		
+	$('#new_contact_pane').bind('pageAnimationStart', function(event, info){
+		if (info.direction == 'in') {
+			var id = $(this).data('referrer').attr('contact_id');
+			var data = $('#people_pane').data('peopleResultsData'); 
+			populateNewContactPane(data,id) ;
+			$('#people_pane').data('loaded', true);  			//toggle 'loaded' to prevent refresh 
+		}
+	});	
 	
 }); // end document.ready 
 
