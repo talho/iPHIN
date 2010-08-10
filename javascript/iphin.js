@@ -379,10 +379,17 @@ $(document).ready(function() {
 		   	loadAlertsData(data);
          },
 		   error: function(xhr) {
-		   	$("#messageBox").text('Could not contact server.');
 				switch (xhr.status) {
-					case   0: msg("Loss connect by Carrier, use Wi-Fi to Access Data."); break;
-					default:  msg("Network error. (code: alerts " + xhr.status + ")"); 
+					case   0: msg("Loss connect by Carrier, use Wi-Fi to Access Data.");
+						$("#messageBox").text('Could not contact server.'); 
+					break;			
+					case 404:
+						$("#messageBox").text('No alerts at this time.');
+					break; 
+					default: 
+						 msg("Network error. (code: alerts " + xhr.status + ")");
+						 $("#messageBox").text('Could not contact server.');
+					break;  
 				}
 			}
 		});
@@ -402,7 +409,6 @@ $(document).ready(function() {
 
 /////////////////////// People Search  //////////////////////			
 	
-	$('#people_search_pane').unbind()
 	$('#people_search_pane').bind('pageAnimationStart', function(event, info){
 		if (info.direction == 'in') {
 			//     		fetchRoles(); 
@@ -411,7 +417,6 @@ $(document).ready(function() {
 		}
 	});
 	
-	$('#people_pane').unbind()
 	$('#people_pane').bind('pageAnimationStart', function(event, info){
 		if (info.direction == 'in') {
 			if(!$("#people_pane").data('loaded')) {   //don't hit the server again if there are already current search results 
@@ -422,7 +427,6 @@ $(document).ready(function() {
 		}
 	});
 	
-	$('#new_contact_pane').unbind();
 	$('#new_contact_pane').bind('pageAnimationStart', function(event, info){
 		if (info.direction == 'in') {
     		$('#people_pane').data('loaded', true);  
