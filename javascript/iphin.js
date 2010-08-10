@@ -222,10 +222,21 @@ $(document).ready(function() {
 	}
 
 	// Load the Alert previews
-
+	
 	$('#alerts_pane').bind('pageAnimationStart', function(event, info){
-   	if (info.direction == 'in') fetchAlerts();
+   	if (info.direction == 'in') {
+   		if (!$("#alerts_pane").data('loaded')){
+   			fetchAlerts();
+   		}
+   		$('#alerts_pane').data('loaded', false);
+   	}
 	});
+	
+	$('#alert_detail_pane').bind('pageAnimationStart', function(event, info){
+		if (info.direction == 'in') {
+			$('#alerts_pane').data('loaded', true);
+		}
+	});	
 	
 	$('#refreshAlertsButton').click(function(event) {  //refreshbutton binding
 		fetchAlerts();
@@ -300,6 +311,7 @@ $(document).ready(function() {
 		}		
 		alertDetailsString += '</ul></li>';	
 		$('#alert_details').append(alertDetailsString);
+		
 		///////////// handle radio selection UI 
 		$('.radioList').click(function() {	
 			$(this).children(".radioButtons").attr('checked', true);
@@ -379,7 +391,7 @@ $(document).ready(function() {
 	function loadAlertsData(data) {
 		if (data.length > 0 ){
 			populateAlertsPreviewPane(data); // stuff data into main alerts page
-			$("#alerts_preview li a").click(function(e) {		
+			$("#alerts_preview li a").mouseup(function(e) {		
 				var id = $(this).attr("alert_id")||0;	//
 				populateAlertDetailPane(data,id);  //fill the detail pane with data 
 			});
@@ -390,6 +402,7 @@ $(document).ready(function() {
 
 /////////////////////// People Search  //////////////////////			
 	
+	$('#people_search_pane').unbind()
 	$('#people_search_pane').bind('pageAnimationStart', function(event, info){
 		if (info.direction == 'in') {
 			//     		fetchRoles(); 
@@ -397,7 +410,8 @@ $(document).ready(function() {
 			// setRoles(data);
 		}
 	});
-
+	
+	$('#people_pane').unbind()
 	$('#people_pane').bind('pageAnimationStart', function(event, info){
 		if (info.direction == 'in') {
 			if(!$("#people_pane").data('loaded')) {   //don't hit the server again if there are already current search results 
@@ -408,6 +422,7 @@ $(document).ready(function() {
 		}
 	});
 	
+	$('#new_contact_pane').unbind();
 	$('#new_contact_pane').bind('pageAnimationStart', function(event, info){
 		if (info.direction == 'in') {
     		$('#people_pane').data('loaded', true);  
@@ -496,6 +511,7 @@ $(document).ready(function() {
 		contactPaneString += '<li><a id="create_contact" href="#people_pane" class="blueButton submit">Create</a></li></form></ul>';	
 		$('#new_contact').empty();
 		$('#new_contact').append(contactPaneString );
+		$('#create_contact').unbind();
 		$('#create_contact').bind("click",function(e) {
 			var firstName = $(".contactValue[name=firstName]").attr("value");
 			var lastName = $(".contactValue[name=lastName]").attr("value");
