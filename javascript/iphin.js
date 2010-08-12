@@ -373,6 +373,7 @@ $(document).ready(function() {
  				if (xhr.status == 200) {        ///Hacky crappy workaround to jquery bug wherein EVERY response comes back 'success'
  					// everything ok
  					$('#ackButton').text('Thank you.');
+ 					$('#alerts_pane').data('loaded', false);  //cause refresh when user returns to alerts_preview
  					setTimeout(function() { $('#ackButton').fadeOut(); }, 2000);	
  				} else {
    				// it's actually an error
