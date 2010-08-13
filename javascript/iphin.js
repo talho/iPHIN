@@ -1,6 +1,7 @@
 var PROTOCOL = "http://";
 // var HOST = "txphin.org" // for production
-var HOST = (/iphone/i.test(navigator.platform)) ? "192.168.1.44:3000" : "localhost:3000"
+//var HOST = (/iphone/i.test(navigator.platform)) ? "192.168.30.97:8080" : "localhost:3000"
+var HOST = "192.168.30.97:8080"
 var DOMAIN   = PROTOCOL + HOST;
 
 // Wait for PhoneGap to load
@@ -31,7 +32,8 @@ var jQT = new $.jQTouch({
   //addGlossToIcon: false,
   startupScreen:"images/startup.png",
   statusBar:'black-translucent',
-  preloadImages:[
+	useFastTouch: false,
+	preloadImages:[
     'jqtouch/themes/jqt/img/back_button.png',
     'jqtouch/themes/jqt/img/back_button_clicked.png',
     'jqtouch/themes/jqt/img/button_clicked.png',
@@ -43,8 +45,18 @@ var jQT = new $.jQTouch({
   ]
 });
 
-	function setCookie(data) {sessionStorage._cookie = data.cookie;}
-	function getCookie() {return sessionStorage._cookie;}
+ //alert(DeviceInfo.version);
+
+	if(typeof sessionStorage == "undefined")
+	 var sessionStorage = window;
+
+	if(typeof localStorage == "undefined")
+	 var localStorage = window;
+
+	function setCookie(data) {
+		localStorage._cookie = data.cookie;
+		}
+	function getCookie() {return localStorage._cookie;}
 
 	function setAlertDetail(data) {localStorage.alertDetail = data;}
 	function getAlertDetail() {return localStorage.alertDetail;}
@@ -59,9 +71,9 @@ var jQT = new $.jQTouch({
 			setRolesExpiresOn(data.expires_on);
 		}
 	}
-
-	function setJurisdictionsExpiresOn(date) {localStorage.jurisdictionExpiresOn = date;}
-	function jurisdictionsHasExpired() {return (Date() > new Date(localStorage.jurisdictionExpiresOn||0)) ;}
+	
+	function setJurisdictionsExpiresOn(date) {localStorage.jurisdictionsExpiresOn = date;}
+	function jurisdictionsHasExpired() {return (Date() > new Date(localStorage.jurisdictionsExpiresOn||0)) ;}
 
 	function getJurisdictions() {return JSON.parse(localStorage.jurisdictions||"[]");}
 	function setJurisdictions(data) {
@@ -70,7 +82,6 @@ var jQT = new $.jQTouch({
 			setJurisdictionsExpiresOn(data.expires_on);
 		}
 	}
-
 
 function msg(message) {
 	try {navigator.notification.alert(message,"TxPhin","OK");}
@@ -105,11 +116,30 @@ function hideMessageBox(){
 }
 
 $(document).ready(function() {
-	
+		
 	if (typeof(PhoneGap) != 'undefined') {
 	    $('body > *').css({minHeight: '460px !important'});
 	}
 
+	if(typeof(getCookie()) != 'undefined'){
+		try {
+					fetchRoles();
+					fetchJurisdictions();
+		} catch(e) {
+					"fetch error" + alert(e.message);
+		}
+		try {
+						fetchAlerts();
+						jQT.goTo($('#alerts_pane'), 'dissolve');
+		} catch(e) {
+			"goto error:" + alert(e.message);
+		};	
+	} else {
+		jQT.goTo($('#signin_pane'), 'flip');
+	}
+					
+		
+	
 	//set up [enter key] listener for login
 	$('#loginEmailField, #loginPasswordField').keypress(function(e) {
         if(e.which == 13) {
@@ -137,15 +167,19 @@ $(document).ready(function() {
 		   data: $('#signin_form').serialize(),
 		   dataType: "json",
 		   url: DOMAIN + "/session.json",
-			//timeout: 10000,
+			timeout: 10000,
 			cache: false,
 		   success: function(data) {
 		   	 hideMessageBox();
 		   	 //$('#signin').show();
 				 setCookie(data);
-				 fetchRoles();
-				 fetchJurisdictions();
-				 jQT.goTo($('#alerts_pane'), 'flip')
+					 try {
+						fetchRoles();
+						fetchJurisdictions();
+					 } catch(e) {"fetch error" + alert(e.message);}
+					 try {
+						jQT.goTo($('#alerts_pane'), 'flip');
+					 } catch(e) {"goto error:" + alert(e.message);};
 			 },
 		   error: function(xhr) {
 		   	hideMessageBox();
@@ -168,8 +202,9 @@ $(document).ready(function() {
 		}
 		else {
 			$.ajax({
-				type: "POST",
+				type: "GET",
 		  		dataType: "json",
+					timeout: 10000,
 		 		url: DOMAIN + "/roles.json",
 		  		beforeSend: function(xhr) { xhr.setRequestHeader("Cookie", getCookie()); },
 				success: function(data) {
@@ -193,6 +228,7 @@ $(document).ready(function() {
 			$.ajax({
 			  type: "GET",
 				dataType: "json",
+				timeout: 10000,
 				url: DOMAIN + "/jurisdictions.json",
 				beforeSend: function(xhr) { xhr.setRequestHeader("Cookie", getCookie()); },
 				success: function(data) {
@@ -238,6 +274,7 @@ $(document).ready(function() {
 		$.ajax({
 		   type: "GET",
 		   dataType: "json",
+			 timeout: 10000,
 		   url: DOMAIN + "/han.json",
 			 beforeSend: function(xhr) { xhr.setRequestHeader("Cookie", getCookie()); },
 		   success: function(data) { 
@@ -304,6 +341,7 @@ $(document).ready(function() {
 			alertPreviewString += '</a></li>';
 		$('#alerts_preview').append(alertPreviewString);
 		}
+		$('#alerts_preview').append('<br />');
 	}	
 	
 	function populateAlertDetailPane(data, id) { //Build an html string from the JSON data and append it to alert_details.  This is messy :(
@@ -366,6 +404,7 @@ $(document).ready(function() {
 		   type: "GET",
 		   url: DOMAIN + path + '.json', 
 		   data: calldown,  
+			 timeout: 10000,
 			beforeSend: function(xhr) {
 				xhr.setRequestHeader("Cookie", getCookie()); 
 			},
@@ -393,7 +432,9 @@ $(document).ready(function() {
 	$('#alerts_pane').bind('pageAnimationStart', function(event, info){
    	if (info.direction == 'in') {
    		if (!$("#alerts_pane").data('loaded')){
-   			fetchAlerts();
+						try {
+							fetchAlerts();
+						} catch(e) {"fetchalertserror: " + alert(e.message);};
    		}
    		$('#alerts_pane').data('loaded', false);
    	}
@@ -410,6 +451,7 @@ $(document).ready(function() {
 	
 	$('#refreshAlertsButton').click(function(event) {  //refreshbutton binding
 		fetchAlerts();
+		return false;
 	});	
 		
 		
@@ -429,6 +471,7 @@ $(document).ready(function() {
 		   type: "POST",
 		   data: searchData,
 		   dataType: "json",
+			 timeout: 10000,
 		   url: DOMAIN + "/search/show_advanced.json",
 			 beforeSend: function(xhr) { xhr.setRequestHeader("Cookie", getCookie()); },
 		   success: function(data) { 
@@ -464,6 +507,7 @@ $(document).ready(function() {
 				$('#people_results').append(personResultString );
 				hideMessageBox();
 			} 
+			$('#people_results').append('<br />');
 		} else {
 			showMessageBox('nosearch', '#people_results');	
 		}
@@ -520,7 +564,7 @@ $(document).ready(function() {
 		}
 	});
 		
-	$('#new_contact_pane').bind('pageAnimationStart', function(event, info){
+	$('#new_contact_pane').bind('pageAnimationStart', function(event, info){	
 		if (info.direction == 'in') {
 			var id = $(this).data('referrer').attr('contact_id');
 			var data = $('#people_pane').data('peopleResultsData'); 
