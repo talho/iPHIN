@@ -201,7 +201,7 @@ ul li a, li.img a + a {
 }
 
 ul li a.active {
-    background: #194fdb url(img/selection.png) 0 0 repeat-x;
+    background: #c4d2f6 url(img/selection.png) 0 0 repeat-x;
     color: #fff;
 }
 
