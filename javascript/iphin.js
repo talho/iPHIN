@@ -1,7 +1,7 @@
 var PROTOCOL = "http://";
 // var HOST = "txphin.org" // for production
 //var HOST = (/iphone/i.test(navigator.platform)) ? "192.168.30.97:8080" : "localhost:3000"
-var HOST = "192.168.30.97:8080"
+var HOST = "iphin.texashan.org"
 var DOMAIN   = PROTOCOL + HOST;
 
 // Wait for PhoneGap to load
@@ -26,6 +26,8 @@ function reachableCallback(reachability) {
 		}
 	}
 }
+
+alert(navigator.device.platform);
 
 var jQT = new $.jQTouch({
   icon:'images/txphin-icon.png',
@@ -531,7 +533,7 @@ $(document).ready(function() {
 			}
 		}
 		contactPaneString += '<p><input class="contactValue" name="phoneNumber" type="text" ' + phoneNumberString + ' ></p></li>';
-		contactPaneString += '<li><a id="create_contact" href="#people_pane" class="blueButton submit">Create</a></li></form></ul>';	
+		contactPaneString += '<li><a id="create_contact" href="#people_pane" class="blueButton submit">Add to phone</a></li></form></ul>';	
 		$('#new_contact').empty();
 		$('#new_contact').append(contactPaneString );
 		$('#create_contact').unbind();
