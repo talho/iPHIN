@@ -1,7 +1,7 @@
 var PROTOCOL = "http://";
 // var HOST = "txphin.org" // for production
-//var HOST = (/iphone/i.test(navigator.platform)) ? "192.168.30.97:8080" : "localhost:3000"
-var HOST = "iphin.texashan.org"
+var HOST = (/iphone/i.test(navigator.platform)) ? "192.168.30.97:8080" : "localhost:3000"
+//var HOST = "iphin.texashan.org"
 var DOMAIN   = PROTOCOL + HOST;
 
 // Wait for PhoneGap to load
@@ -27,7 +27,7 @@ function reachableCallback(reachability) {
 	}
 }
 
-alert(navigator.device.platform);
+//alert(navigator.device.platform);
 
 var jQT = new $.jQTouch({
   icon:'images/txphin-icon.png',
@@ -109,6 +109,9 @@ function showMessageBox(command, element){  //prepends a string in a box at the 
 		case 'neterror':
 			userMessage = '<li id="messageBox">Could not connect to server.</li>';
 		break;
+		case 'expired':
+		  userMessage = '<li id="messageBox">Your session has expired.</li>';
+		break;
 	}
 	$(element).prepend(userMessage); 
 }
@@ -173,7 +176,6 @@ $(document).ready(function() {
 			cache: false,
 		   success: function(data) {
 		   	 hideMessageBox();
-		   	 //$('#signin').show();
 				 setCookie(data);
 					 try {
 						fetchRoles();
@@ -215,8 +217,9 @@ $(document).ready(function() {
 					},
 				error: function(xhr) {
 					switch (xhr.status) {
-						default:  msg("Network error. (code: people " + xhr.status + ")");}
-					}
+//						default:  msg("Network error. (code: people " + xhr.status + ")");
+          }
+				}
 			});
 		};
 	}
@@ -239,7 +242,7 @@ $(document).ready(function() {
 					},
 				error: function(xhr) {
 					switch (xhr.status) {
-						default:  msg("Network error. (code: people " + xhr.status + ")");
+//						default:  msg("Network error. (code: people " + xhr.status + ")");
 					}
 				}
 			});
@@ -277,10 +280,11 @@ $(document).ready(function() {
 		   type: "GET",
 		   dataType: "json",
 			 timeout: 10000,
+			 cache: false,
 		   url: DOMAIN + "/han.json",
 			 beforeSend: function(xhr) { xhr.setRequestHeader("Cookie", getCookie()); },
 		   success: function(data) { 
-		   	populateAlertsPreviewPane(data); // stuff data into main alerts page
+		     populateAlertsPreviewPane(data); // stuff data into main alerts page
          },
 		   error: function(xhr) {
 				switch (xhr.status) {
@@ -299,6 +303,11 @@ $(document).ready(function() {
 	function populateAlertsPreviewPane(alertsData){
 		if (!alertsData.length > 0) { 
 			 $("#messageBox").text('No alerts at this time.');
+			 return false;
+		}
+		if (alertsData[0].SESSION == 'EXPIRED') { 
+			 jQT.goTo($('#signin_pane'), 'flip');
+			 showMessageBox('expired', '#signin_fields');
 			 return false;
 		}
 		hideMessageBox();
@@ -455,6 +464,10 @@ $(document).ready(function() {
 		fetchAlerts();
 		return false;
 	});	
+	
+	$('#logoutButton').click(function(event) { 
+	  localStorage.clear();
+	});
 		
 		
 /////////////////////// People Search  //////////////////////				
