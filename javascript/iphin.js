@@ -1,8 +1,10 @@
 var PROTOCOL = "http://";
 // var HOST = "txphin.org" // for production
-var HOST = (/iphone/i.test(navigator.platform)) ? "192.168.30.97:8080" : "localhost:3000"
+//var HOST = (/iphone/i.test(navigator.platform)) ? "192.168.30.97:8080" : "localhost:3000"
 //var HOST = "iphin.texashan.org"
+var HOST = "192.168.1.44:3000"; //rich's computer
 var DOMAIN   = PROTOCOL + HOST;
+
 
 // Wait for PhoneGap to load
 function onBodyLoad() {	
@@ -27,14 +29,14 @@ function reachableCallback(reachability) {
 	}
 }
 
-//alert(navigator.device.platform);
+
 
 var jQT = new $.jQTouch({
   icon:'images/txphin-icon.png',
   //addGlossToIcon: false,
   startupScreen:"images/startup.png",
   statusBar:'black-translucent',
-	useFastTouch: false,
+	useFastTouch: false,  //causes the app to feel a little sluggish, but fixed a large number of tap related issues
 	preloadImages:[
     'jqtouch/themes/jqt/img/back_button.png',
     'jqtouch/themes/jqt/img/back_button_clicked.png',
@@ -49,38 +51,44 @@ var jQT = new $.jQTouch({
 
  //alert(DeviceInfo.version);
 
-	if(typeof sessionStorage == "undefined")
-	 var sessionStorage = window;
+//	if(typeof sessionStorage == "undefined")
+//	 var sessionStorage = window;
 
-	if(typeof localStorage == "undefined")
-	 var localStorage = window;
+//	if(typeof localStorage == "undefined")
+//	 var localStorage = window;
+
+	function supports_local_storage() {
+		return ('localStorage' in window) && window['localStorage'] !== null;
+	}
 
 	function setCookie(data) {
-		localStorage._cookie = data.cookie;
+		window['localStorage']._cookie = data.cookie;
 		}
-	function getCookie() {return localStorage._cookie;}
+	function getCookie() {
+		return window['localStorage']._cookie;
+	}
 
-	function setAlertDetail(data) {localStorage.alertDetail = data;}
-	function getAlertDetail() {return localStorage.alertDetail;}
+	function setAlertDetail(data) {window['localStorage'].alertDetail = data;}
+	function getAlertDetail() {return window['localStorage'].alertDetail;}
 
-	function setRolesExpiresOn(date) {localStorage.rolesExpiresOn = date;}
-	function rolesHasExpired() {return (Date() > new Date(localStorage.rolesExpiresOn||0)) ;}
+	function setRolesExpiresOn(date) {window['localStorage'].rolesExpiresOn = date;}
+	function rolesHasExpired() {return (Date() > new Date(window['localStorage'].rolesExpiresOn||0)) ;}
 
-	function getRoles() {return JSON.parse(localStorage.roles||"[]");}
+	function getRoles() {return JSON.parse(window['localStorage'].roles||"[]");}
 	function setRoles(data) {
 		if (data.roles.length>0) {
-			localStorage.roles = JSON.stringify(data.roles);
+			window['localStorage'].roles = JSON.stringify(data.roles);
 			setRolesExpiresOn(data.expires_on);
 		}
 	}
 	
-	function setJurisdictionsExpiresOn(date) {localStorage.jurisdictionsExpiresOn = date;}
-	function jurisdictionsHasExpired() {return (Date() > new Date(localStorage.jurisdictionsExpiresOn||0)) ;}
+	function setJurisdictionsExpiresOn(date) {window['localStorage'].jurisdictionsExpiresOn = date;}
+	function jurisdictionsHasExpired() {return (Date() > new Date(window['localStorage'].jurisdictionsExpiresOn||0)) ;}
 
-	function getJurisdictions() {return JSON.parse(localStorage.jurisdictions||"[]");}
+	function getJurisdictions() {return JSON.parse(window['localStorage'].jurisdictions||"[]");}
 	function setJurisdictions(data) {
 		if (data.jurisdictions.length>0) {
-			localStorage.jurisdictions = JSON.stringify(data.jurisdictions);
+			window['localStorage'].jurisdictions = JSON.stringify(data.jurisdictions);
 			setJurisdictionsExpiresOn(data.expires_on);
 		}
 	}
@@ -122,6 +130,8 @@ function hideMessageBox(){
 
 $(document).ready(function() {
 		
+	//alert(navigator.device.platform);			  
+				  
 	if (typeof(PhoneGap) != 'undefined') {
 	    $('body > *').css({minHeight: '460px !important'});
 	}
@@ -132,7 +142,7 @@ $(document).ready(function() {
 					fetchJurisdictions();
 		} catch(e) {
 					"fetch error" + alert(e.message);
-		}
+		};
 		try {
 						fetchAlerts();
 						jQT.goTo($('#alerts_pane'), 'dissolve');
@@ -466,7 +476,9 @@ $(document).ready(function() {
 	});	
 	
 	$('#logoutButton').click(function(event) { 
-	  localStorage.clear();
+	  window['localStorage'].clear();
+	  jQT.goTo($('#signin_pane'), 'flip');
+	  return false;			 
 	});
 		
 		
