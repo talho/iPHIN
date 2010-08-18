@@ -154,32 +154,26 @@ $(document).ready(function() {
 
 ////////////////////////// Initial setup ////////////////////////// 	
 	$('a#signin').click(function(event) {
-		showMessageBox('auth', '#signin_fields');
+		//showMessageBox('auth', '#signin_fields');
 		$.ajax({
-		   type: "POST",
-		   data: $('#signin_form').serialize(),
-		   dataType: "json",
-		   url: DOMAIN + "/session.json",
+		  type: "POST",
+		  data: $('#signin_form').serialize(),
+		  dataType: "json",
+		  url: DOMAIN + "/session.json",
 			timeout: 10000,
 			cache: false,
-		   success: function(data) {
-		     //$('#signin_pane').data('userEmail', $('#loginEmailField')[0].value );
-		     $('.footerEmail').text($('#loginEmailField')[0].value); 
-		   	 hideMessageBox();
-				 setCookie(data);
-					 try {
-						fetchRoles();
-						fetchJurisdictions();
-					 } catch(e) {"fetch error" + alert(e.message);}
-					 try {
-						jQT.goTo($('#alerts_pane'), 'flip');
-					 } catch(e) {"goto error:" + alert(e.message);};
-			 },
-		   error: function(xhr) {
-		   	hideMessageBox();
-		   	//$('#signin').show();
-				switch (xhr.status) {
-					case 401: msg("No user with this email and password."); break;
+		  success: function(data) {
+		    $('.footerEmail').text($('#loginEmailField')[0].value); 
+		    hideMessageBox();
+			  setCookie(data);
+				fetchRoles();
+				fetchJurisdictions();
+				jQT.goTo($('#alerts_pane'), 'flip');
+			},
+		  error: function(xhr) {
+		    hideMessageBox();
+        switch (xhr.status) {
+			    case 401: msg("No user with this email and password."); break;
 					case 0:   msg("No user with this email and password."); break;
 					default: msg("Network error. (code: signin " + xhr.status + ")");
 				}
@@ -262,7 +256,7 @@ $(document).ready(function() {
 
 	function populateRolesSelector(roles){
 		var rolesSelectString = 
-			'<select name="[role_ids][]" multiple="multiple">' +
+			'<select name="[role_ids][]" >' +
 			'<option value="" SELECTED>Any Role...</option>';
 		for (var r in roles){
 			rolesSelectString += '<option value="' + roles[r].id + '">' + roles[r].name + '</option>';
@@ -460,9 +454,7 @@ $(document).ready(function() {
 		$('#ackButton').text('working...');
 		acknowledgeAlert(data[id].detail.path, responseData);	 
 	});	
-}		
-	
-	
+}		///what does this close? 
 	
 	function acknowledgeAlert(path, calldown){
 		var xhr = $.ajax({
