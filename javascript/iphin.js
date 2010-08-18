@@ -129,48 +129,36 @@ function hideMessageBox(){
 }
 
 $(document).ready(function() {
-		
-	//alert(navigator.device.platform);			  
 				  
 	if (typeof(PhoneGap) != 'undefined') {
 	    $('body > *').css({minHeight: '460px !important'});
 	}
 
-	if(typeof(getCookie()) != 'undefined'){
-		try {
-					fetchRoles();
-					fetchJurisdictions();
-		} catch(e) {
-					"fetch error" + alert(e.message);
-		};
-		try {
-						fetchAlerts();
-						jQT.goTo($('#alerts_pane'), 'dissolve');
-		} catch(e) {
-			"goto error:" + alert(e.message);
-		};	
+	if(typeof(getCookie()) != 'undefined'){  // if they're not already logged in 
+		fetchRoles();
+		fetchJurisdictions();
+		fetchAlerts();
+		jQT.goTo($('#alerts_pane'), 'dissolve');
 	} else {
 		jQT.goTo($('#signin_pane'), 'flip');
-	}
-					
-		
+	}		
 	
 	//set up [enter key] listener for login
 	$('#loginEmailField, #loginPasswordField').keypress(function(e) {
-        if(e.which == 13) {
-        		e.preventDefault();
-            jQuery(this).blur();
-            jQuery('#signin').focus().click();
-        }
+    if(e.which == 13) {
+    	e.preventDefault();
+      jQuery(this).blur();
+      jQuery('#signin').focus().click();
+    }
 	});
 	
 	//set up [enter key] listener for people search
-	$('#people_search_form_first_name, #people_search_form_last_name, #people_search_form_email').keypress(function(e) {
-        if(e.which == 13) {
-        		e.preventDefault();
-            jQuery(this).blur();
-            jQuery('#quicksearch').focus().click();
-        }
+	$('.peopleEnterkey').keypress(function(e) {
+    if(e.which == 13) {
+    e.preventDefault();
+    jQuery(this).blur();
+    jQuery('#quicksearch').focus().click();
+   }
 	});
 
 ////////////////////////// Initial setup ////////////////////////// 
@@ -185,6 +173,8 @@ $(document).ready(function() {
 			timeout: 10000,
 			cache: false,
 		   success: function(data) {
+		     //$('#signin_pane').data('userEmail', $('#loginEmailField')[0].value );
+		     $('.footerEmail').text($('#loginEmailField')[0].value); 
 		   	 hideMessageBox();
 				 setCookie(data);
 					 try {
@@ -207,6 +197,30 @@ $(document).ready(function() {
 		});
 		return false;
 	});
+	
+	var ALERTS_PER_PAGE = 10;
+	var PEOPLE_PER_PAGE = 10;
+ 
+  $('#alerts_preview').data('page', 1);  // initialize alerts pagination	
+  $('#alerts_preview').data('lock', false) // unlock firing of loadMoreAlerts 
+  $('#people_pane').data('page', 1);  // initialize alerts pagination	
+  $('#people_pane').data('lock', false) // unlock firing of loadMorePeople 
+	
+  $(window).scroll(function(){  //this fires loadMoreAlerts if we've hit the bottom of the page and it's not locked. 
+      // if we're not locked 
+ 
+    if  ($(window).scrollTop() == $(document).height() - $(window).height()){
+      if ($('body').data('currentPane') === 'alerts' ){
+        if (!$('#alerts_preview').data('lock')) {
+          loadMoreAlerts();
+        }
+      } else if ($('body').data('currentPane') === 'people' ){
+        if (!$('#people_pane').data('lock')) {
+          loadMorePeople();
+        }
+      }
+    }
+  });	
 	
 	// Quietly fetch roles and jurisdictions 
 	function fetchRoles() {
@@ -283,20 +297,24 @@ $(document).ready(function() {
 
 
 ////////////////////////////// Alerts ///////////////////////////////////
-	
-	function fetchAlerts() {
-		showMessageBox('loadingalerts', '#alerts_preview');
+		
+	function fetchAlerts(page) {
+	  if (page === undefined || page === 1){   
+	    page = 1;      //// first page requested, loading msg at top 
+	    showMessageBox('loadingalerts', '#alerts_preview');
+	  } 
+	  		
 		$.ajax({
-		   type: "GET",
-		   dataType: "json",
-			 timeout: 10000,
-			 cache: false,
-		   url: DOMAIN + "/han.json",
-			 beforeSend: function(xhr) { xhr.setRequestHeader("Cookie", getCookie()); },
-		   success: function(data) { 
-		     populateAlertsPreviewPane(data); // stuff data into main alerts page
-         },
-		   error: function(xhr) {
+		  type: "GET",
+		  dataType: "json",
+			timeout: 10000,
+			cache: false,
+		  url: DOMAIN + '/han.json?per_page=' + ALERTS_PER_PAGE + '&page=' + page,
+			beforeSend: function(xhr) { xhr.setRequestHeader("Cookie", getCookie()); },
+		  success: function(data) { 
+        prepareAlertsData(data, page);
+      },
+		  error: function(xhr) {
 				switch (xhr.status) {
 					case  0: 
 						msg("Loss connect by Carrier, use Wi-Fi to Access Data.");			 
@@ -309,21 +327,49 @@ $(document).ready(function() {
 			}
 		});
 	}	
+	
+  function prepareAlertsData(alertsData, page){
+    if (alertsData.length == 0) {
+          if (page == 1){
+            $("#messageBox").text('No alerts at this time.');
+            return false;
+          } else {
+            $('#loadingMoreAlerts').text('End of alerts.');
+            return false; 
+          }
+        }
+        if (alertsData[0].SESSION == 'EXPIRED') {   
+          jQT.goTo($('#signin_pane'), 'flip');
+          showMessageBox('expired', '#signin_fields');
+          return false;
+        }
+        if (page > 1){  // if we need to append this data to the current set
+          var currentData = $('#alerts_preview').data('alertsData');  //make a copy
+          var firstNewAlertNumber = ALERTS_PER_PAGE * (page -1);
+          for (var d in alertsData) {
+            var k = parseInt(firstNewAlertNumber) + parseInt(d);
+            currentData[k] = alertsData[d];  //alter the copy
+          }
+          $('#alerts_preview').data('alertsData', currentData);  //overwrite old with altered copy
+        } else {
+          $('#alerts_preview').data('alertsData', alertsData);  //store alerts data
+        }
+        populateAlertsPreviewPane(page); // stuff data into main alerts page
+		    
+  }	
 		
-	function populateAlertsPreviewPane(alertsData){
-		if (!alertsData.length > 0) { 
-			 $("#messageBox").text('No alerts at this time.');
-			 return false;
+	function populateAlertsPreviewPane(page){
+		alertsData = $('#alerts_preview').data('alertsData');  //just for redability 
+		$('#alerts_preview').data('lock', false); //unlock loading of more alerts
+		if (page == 1){  
+		  hideMessageBox();
+		  $('#alerts_preview').empty();
+		  var firstNewAlertNumber = 0;
+		} else {
+		  $('#loadingMoreAlerts').remove();
+		  var firstNewAlertNumber = ALERTS_PER_PAGE * (page - 1);
 		}
-		if (alertsData[0].SESSION == 'EXPIRED') { 
-			 jQT.goTo($('#signin_pane'), 'flip');
-			 showMessageBox('expired', '#signin_fields');
-			 return false;
-		}
-		hideMessageBox();
-		$('#alerts_preview').empty();
-		$('#alerts_preview').data('alertsData', alertsData);  //store the fetched alerts data
-		for (var d in alertsData){  //for each alert
+		for (var d = firstNewAlertNumber; d < alertsData.length; d++){  //for each new alert
 			var alertPreviewString = '<li class="arrow '; 
 			if (alertsData[d].detail.path) {	alertPreviewString += 'ackPreview';	}   //add CSS class to distinguish alerts that need ack.
 			alertPreviewString += ' "><a href="#alert_detail_pane" class="detailLink" alert_id="' + d + '">';
@@ -360,9 +406,8 @@ $(document).ready(function() {
 				}
 			}
 			alertPreviewString += '</a></li>';
-		$('#alerts_preview').append(alertPreviewString);
+		  $('#alerts_preview').append(alertPreviewString);
 		}
-		$('#alerts_preview').append('<br />');
 	}	
 	
 	function populateAlertDetailPane(data, id) { //Build an html string from the JSON data and append it to alert_details.  This is messy :(
@@ -403,22 +448,30 @@ $(document).ready(function() {
 		});
 
 		///////////// handle acknowledge button clicks
-		$('#ackButton').click(function() {
-			var responseData = '';
-			if (doAdvancedAck) {
-				var detailResponse = $("input[name='ackAdvancedResponse']:checked").val(); //grab the response, if any 
-				if (detailResponse == undefined) {
-					msg('You must select a response.');
-					return false;
-				} else {
-					responseData = {'alert_attempt[call_down_response]': detailResponse};
-				}
-			} 
-			$('#ackButton').unbind('click');
-			$('#ackButton').text('working...');
-			acknowledgeAlert(data[id].detail.path, responseData);	 
-		});	
-	}	
+	$('#ackButton').click(function() {
+		var responseData = '';
+		if (doAdvancedAck) {
+			var detailResponse = $("input[name='ackAdvancedResponse']:checked").val(); //grab the response, if any 
+			if (detailResponse == undefined) {
+				msg('You must select a response.');
+				return false;
+			} else {
+				responseData = {'alert_attempt[call_down_response]': detailResponse};
+			}
+		} 
+		$('#ackButton').unbind('click');
+		$('#ackButton').text('working...');
+		acknowledgeAlert(data[id].detail.path, responseData);	 
+	});	
+}	
+	
+  function loadMoreAlerts(){
+    $('#alerts_preview').data('lock', true);    //lock it
+    var loadingMoreString = '<li id="loadingMoreAlerts"><img src="images/loading.gif">Loading more alerts...<br /></li>';
+    $('#alerts_preview').append(loadingMoreString);
+    $('#alerts_preview').data('page', $('#alerts_preview').data('page') + 1 );  //increment page counter 
+    fetchAlerts($('#alerts_preview').data('page'));
+  }	
 	
 	function acknowledgeAlert(path, calldown){
 		var xhr = $.ajax({
@@ -452,12 +505,11 @@ $(document).ready(function() {
 	///////////// Alerts bindings /////////////
 	$('#alerts_pane').bind('pageAnimationStart', function(event, info){
    	if (info.direction == 'in') {
+   	  $('body').data('currentPane', 'alerts');
    		if (!$("#alerts_pane").data('loaded')){
-						try {
-							fetchAlerts();
-						} catch(e) {"fetchalertserror: " + alert(e.message);};
+				fetchAlerts();
+        $("#alerts_pane").data('loaded', true)
    		}
-   		$('#alerts_pane').data('loaded', false);
    	}
 	});
 	
@@ -466,11 +518,12 @@ $(document).ready(function() {
 			var id = $(this).data('referrer').attr('alert_id');
 			var data = $('#alerts_preview').data('alertsData'); 
 			populateAlertDetailPane(data,id) 
-			$('#alerts_pane').data('loaded', true);
 		}
 	});	
 	
 	$('#refreshAlertsButton').click(function(event) {  //refreshbutton binding
+	  $('#alerts_preview').data('lock', false); //unlock loading of more alerts
+	  $('#alerts_preview').data('page', 1);
 		fetchAlerts();
 		return false;
 	});	
@@ -481,28 +534,32 @@ $(document).ready(function() {
 	  return false;			 
 	});
 		
+	$('#loadmoreButton').click(function(event) { 
+	  loadMoreAlerts();
+	  return false;			 
+	});
 		
 /////////////////////// People Search  //////////////////////				
 	
 	// takes the contents of #people_search_form, gets results form the server, and fires the populate function on success 
-	function makeSearchRequest(){  
+	function makeSearchRequest(page){  
 		showMessageBox('loadingsearch', '#people_results');
 		//////// silently add a wildcard (*) to the end of names
-		searchDataObject = $('#people_search_form').serializeObject(); 
+		var searchDataObject = $('#people_search_form').serializeObject(); 
 		var reWild = /[^\*]$/;  /// returns true is there is no trailing wildcard
 		//////// don't want to double up the wildcard
 		if (searchDataObject.first_name.match(reWild)){ searchDataObject.first_name += '*'; } 
 		if (searchDataObject.last_name.match(reWild)){ searchDataObject.last_name += '*'; } 
-		searchData = $.param(searchDataObject);		//convert back to URLencoded string
+		$('#people_results').data('searchData', $.param(searchDataObject));		//convert back to URLencoded string
 		$.ajax({
 		   type: "POST",
-		   data: searchData,
+		   data: $('#people_results').data('searchData'),
 		   dataType: "json",
 			 timeout: 10000,
-		   url: DOMAIN + "/search/show_advanced.json",
+		   url: DOMAIN + '/search/show_advanced.json?page=' + page,
 			 beforeSend: function(xhr) { xhr.setRequestHeader("Cookie", getCookie()); },
 		   success: function(data) { 
-		   	populatePeopleResultsPane(data);
+		   	populatePeopleResultsPane(data, page);
 		   },
 		   error: function(xhr) {
 		   	hideMessageBox();
@@ -515,31 +572,54 @@ $(document).ready(function() {
 		});//end $.ajax	 
 	}	
 
-	function populatePeopleResultsPane(resultsData){	
-		if(resultsData.length > 0){
-			$('#people_pane').data('peopleResultsData', resultsData);  //store the fetched alerts data
-			for (var d in resultsData){
-				var personResultString = 
-					'<ul id="people" class="people edgetoedge"><li class="person arrow">' + 
-					'<a href="#new_contact_pane" class="slideup" contact_id="'+ d + '">'; // **THIS BREAKS WITHOUT ANIMATION CLASS.  NO, I DON'T KNOW WHY***
-				if (resultsData[d].header && resultsData[d].header.length > 0){  						////contact name 
-					personResultString += '<p class="header">' + resultsData[d].header + '</p>';  
-				} 
-				for (var p in resultsData[d].preview.pair){
-					if (resultsData[d].preview.pair[p].key){
-						personResultString += '<p>' + resultsData[d].preview.pair[p].key + '</p>';
-					}
-				}
-				personResultString += '</a></li></ul>';
-				$('#people_results').append(personResultString );
-				hideMessageBox();
-			} 
-			$('#people_results').append('<br />');
-		} else {
-			showMessageBox('nosearch', '#people_results');	
+	function populatePeopleResultsPane(resultsData, page){	
+	
+		if (resultsData.length == 0) {
+		  if (page == 1){
+			  showMessageBox('nosearch', '#people_results');
+			  return false;
+			} else {
+			   $('#loadingMorePeople').text('End of results.');
+			   return false; 
+			}
 		}
-		
-	}
+		$('#people_pane').data('lock', false); //unlock loading of more alerts
+
+		if (page == 1){  
+		  hideMessageBox();
+		  $('#people_results').empty();
+		} else {
+		  $('#loadingMorePeople').remove();
+		}	
+	
+  	$('#people_pane').data('peopleResultsData', resultsData);  //store the fetched alerts data
+		for (var d in resultsData){
+			var personResultString = 
+				'<ul id="people" class="people edgetoedge"><li class="person arrow">' + 
+				'<a href="#new_contact_pane" class="slideup" contact_id="'+ d + '">'; // **THIS BREAKS WITHOUT ANIMATION CLASS.  NO, I DON'T KNOW WHY***
+			if (resultsData[d].header && resultsData[d].header.length > 0){  						////contact name 
+				personResultString += '<p class="header">' + resultsData[d].header + '</p>';  
+			} 
+			for (var p in resultsData[d].preview.pair){
+				if (resultsData[d].preview.pair[p].key){
+					personResultString += '<p>' + resultsData[d].preview.pair[p].key + '</p>';
+				}
+			}
+			personResultString += '</a></li></ul>';
+			$('#spacerBreak').remove();
+			$('#people_results').append(personResultString );
+			hideMessageBox();
+  	} 
+    $('#people_results').append('<br id="spacerBreak" />');	
+  }
+	
+  function loadMorePeople(){
+    $('#people_pane').data('lock', true);    //lock it
+    var loadingMoreString = '<ul id="loadingMorePeople"><li><img src="images/loading.gif">Loading more results...<br /></li></ul>';
+    $('#people_pane').append(loadingMoreString);
+    $('#people_pane').data('page', $('#people_pane').data('page') + 1 );  //increment page counter 
+    makeSearchRequest($('#people_pane').data('page'));
+  }	
 
 	function populateNewContactPane(data, id){	
 		contactPaneString = '<ul class="rounded"><form id="new_contact_form" action="#" method="post" accept-charset="utf-8">';
@@ -583,9 +663,10 @@ $(document).ready(function() {
 	
 	$('#people_pane').bind('pageAnimationStart', function(event, info){
 		if (info.direction == 'in') {
+      $('body').data('currentPane', 'people'); 
 			if(!$("#people_pane").data('loaded')) {   //don't hit the server again if there are already current search results 
 				$('#people_results').empty();
-    			makeSearchRequest();
+    			makeSearchRequest(1);
     		}
     		$('#people_pane').data('loaded', false);
 		}

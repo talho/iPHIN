@@ -17,6 +17,7 @@
   </head>
   
   <body onload="onBodyLoad()">
+  
     
 		<!-- Home / checkcookie pane -->
 		
@@ -64,7 +65,7 @@
       <ul id="alerts_preview" class="alerts rounded edgetoedge">
       </ul>
       <div class="footbar">
-        <h3 id="useremail" >test@example.com </h3><a href="#" id="logoutButton" class="button logout">Log Out</a>
+        <h3 class="footerEmail"></h3><a href="#" id="logoutButton" class="button logout">Log Out</a>
       </div>
     </div>
 
@@ -89,9 +90,9 @@
       </div>
       <ul class="rounded">
         <form action="/search/show_advanced" method="post" id="people_search_form" accept-charset="utf-8">
-            <li><input name="first_name" id="people_search_form_first_name" type="text" placeholder="First Name"></li>
-            <li><input name="last_name"  id="people_search_form_last_name" type="text" placeholder="Last Name"></li>
-            <li><input name="email" id="people_search_form_email" type="text" placeholder="E-mail"></li>
+            <li><input name="first_name" id="people_search_form_first_name" class="peopleEnterkey" type="text" placeholder="First Name"></li>
+            <li><input name="last_name"  id="people_search_form_last_name" class="peopleEnterkey" type="text" placeholder="Last Name"></li>
+            <li><input name="email" id="people_search_form_email" class="peopleEnterkey" type="text" placeholder="E-mail"></li>
             <li id="people_jurisdictions_holder">
               <div id="people_jurisdictions_select"></div>
             </li>
@@ -100,7 +101,8 @@
             </li>
             <li><a id="quicksearch" class="blueButton submit slideup" href="#people_pane">Search</a></li>  
         </form>
-    </ul>
+      </ul>
+      
     </div>
     
     <!-- People pane -->    
@@ -112,6 +114,7 @@
   		</div>
   		<div id="people_results">
   		</div>
+  		
     </div>
     
     <!-- New Contact Pane -->
