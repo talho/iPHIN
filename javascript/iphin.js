@@ -1,10 +1,11 @@
 var PROTOCOL = "http://";
-// var HOST = "txphin.org" // for production
+//var HOST = "txphin.org" // for production
 //var HOST = (/iphone/i.test(navigator.platform)) ? "192.168.30.97:8080" : "localhost:3000"
 //var HOST = "iphin.texashan.org"
 var HOST = "192.168.1.44:3000"; //rich's computer
 var DOMAIN   = PROTOCOL + HOST;
-
+var ALERTS_PER_PAGE = 10; // number of alerts pulled at a time 
+var PEOPLE_PER_PAGE = 10; // number of people results pulled at a time 
 
 // Wait for PhoneGap to load
 function onBodyLoad() {	
@@ -29,8 +30,6 @@ function reachableCallback(reachability) {
 	}
 }
 
-
-
 var jQT = new $.jQTouch({
   icon:'images/txphin-icon.png',
   //addGlossToIcon: false,
@@ -48,14 +47,6 @@ var jQT = new $.jQTouch({
     'images/startup.png'
   ]
 });
-
- //alert(DeviceInfo.version);
-
-//	if(typeof sessionStorage == "undefined")
-//	 var sessionStorage = window;
-
-//	if(typeof localStorage == "undefined")
-//	 var localStorage = window;
 
 	function supports_local_storage() {
 		return ('localStorage' in window) && window['localStorage'] !== null;
@@ -161,8 +152,7 @@ $(document).ready(function() {
    }
 	});
 
-////////////////////////// Initial setup ////////////////////////// 
-	
+////////////////////////// Initial setup ////////////////////////// 	
 	$('a#signin').click(function(event) {
 		showMessageBox('auth', '#signin_fields');
 		$.ajax({
@@ -197,18 +187,15 @@ $(document).ready(function() {
 		});
 		return false;
 	});
-	
-	var ALERTS_PER_PAGE = 10;
-	var PEOPLE_PER_PAGE = 8;
- 
-  $('#alerts_preview').data('page', 1);  // initialize alerts pagination	
-  $('#alerts_preview').data('lock', true) // lock firing of loadMoreAlerts until populateAlertsPreviewPane runs 
+		
+	$('#alerts_preview').data('page', 1);  // initialize alerts pagination	
   $('#people_pane').data('page', 1);  // initialize alerts pagination	
+  
+  $('#alerts_preview').data('lock', true) // lock firing of loadMoreAlerts until populateAlertsPreviewPane runs 
   $('#people_pane').data('lock', true) // lock firing of loadMorePeople until populatePeopleResultsPane runs 
 	
   $(window).scroll(function(){  //this fires loadMoreAlerts if we've hit the bottom of the page and it's not locked. 
-      // if we're not locked 
- 
+    // if we're not locked 
     if  ($(window).scrollTop() == $(document).height() - $(window).height()){
       if ($('body').data('currentPane') === 'alerts' ){
         if (!$('#alerts_preview').data('lock')) {
@@ -296,14 +283,12 @@ $(document).ready(function() {
 	}
 
 
-////////////////////////////// Alerts ///////////////////////////////////
-		
+////////////////////////////// Alerts ///////////////////////////////////	
 	function fetchAlerts(page) {
 	  if (page === undefined || page === 1){   
 	    page = 1;      //// first page requested, loading msg at top 
 	    showMessageBox('loadingalerts', '#alerts_preview');
-	  } 
-	  		
+	  } 	  		
 		$.ajax({
 		  type: "GET",
 		  dataType: "json",
@@ -477,6 +462,8 @@ $(document).ready(function() {
 	});	
 }		
 	
+	
+	
 	function acknowledgeAlert(path, calldown){
 		var xhr = $.ajax({
 		   type: "GET",
@@ -563,7 +550,7 @@ $(document).ready(function() {
 		   data: $('#people_results').data('searchData'),
 		   dataType: "json",
 			 timeout: 10000,
-		   url: DOMAIN + '/search/show_advanced.json?page=' + page,
+		   url: DOMAIN + '/search/show_advanced.json?per_page=' + PEOPLE_PER_PAGE + '&page=' + page,
 			 beforeSend: function(xhr) { xhr.setRequestHeader("Cookie", getCookie()); },
 		   success: function(data) { 
 		   	preparePeopleData(data, page); 
@@ -609,6 +596,7 @@ $(document).ready(function() {
   }	
 
 	function populatePeopleResultsPane(page){	
+	  $('#spacerBreak').remove();
 		resultsData = $('#people_pane').data('peopleResultsData');  //just for redability 
 		if (page == 1){  
 		  hideMessageBox();
@@ -618,10 +606,8 @@ $(document).ready(function() {
 		  $('#loadingMorePeople').remove();
 		  var firstNewPersonNumber = PEOPLE_PER_PAGE * (page - 1);
 		}	
-		
 		for (var d = firstNewPersonNumber; d < resultsData.length; d++){ 		 	
-			var personResultString = 
-				'<ul id="people" class="people edgetoedge"><li class="person arrow">' + 
+			var personResultString = '<li class="person arrow">' + 
 				'<a href="#new_contact_pane" class="slideup" contact_id="'+ d + '">'; // **THIS BREAKS WITHOUT ANIMATION CLASS.  I DO NOT KNOW WHY***
 			if (resultsData[d].header && resultsData[d].header.length > 0){  						////contact name 
 				personResultString += '<p class="header">' + resultsData[d].header + '</p>';  
@@ -631,23 +617,21 @@ $(document).ready(function() {
 					personResultString += '<p>' + resultsData[d].preview.pair[p].key + '</p>';
 				}
 			}
-			personResultString += '</a></li></ul>';
-			$('#spacerBreak').remove();
+			personResultString += '</a></li>';	
 			$('#people_results').append(personResultString );
-			hideMessageBox();
   	} 
 		if (resultsData.length ==  PEOPLE_PER_PAGE * page){ 
 		  $('#people_pane').data('lock', false); //unlock loading of more results
 		} else {
-      var loadingMoreString = '<ul class="edgetoedge" id="loadingMorePeople"><li>End of results.<br /></li></ul>';
+      var loadingMoreString = '<li id="loadingMorePeople">End of results.<br /></li>';
       $('#people_results').append(loadingMoreString);
 		}
-    //$('#people_results').append('<br id="spacerBreak" />');	
+    $('#people').append('<br id="spacerBreak" />');	
   }
 	
   function loadMorePeople(){
     $('#people_pane').data('lock', true);    //lock it
-    var loadingMoreString = '<ul class="edgetoedge" id="loadingMorePeople"><li><img src="images/loading.gif">Loading more results...<br /></li><ul>';
+    var loadingMoreString = '<li id="loadingMorePeople"><img src="images/loading.gif">Loading more results...<br /></li>';
     $('#people_results').append(loadingMoreString);
     $('#people_pane').data('page', $('#people_pane').data('page') + 1 );  //increment page counter 
     makeSearchRequest($('#people_pane').data('page'));
