@@ -199,12 +199,12 @@ $(document).ready(function() {
 	});
 	
 	var ALERTS_PER_PAGE = 10;
-	var PEOPLE_PER_PAGE = 10;
+	var PEOPLE_PER_PAGE = 8;
  
   $('#alerts_preview').data('page', 1);  // initialize alerts pagination	
-  $('#alerts_preview').data('lock', false) // unlock firing of loadMoreAlerts 
+  $('#alerts_preview').data('lock', true) // lock firing of loadMoreAlerts until populateAlertsPreviewPane runs 
   $('#people_pane').data('page', 1);  // initialize alerts pagination	
-  $('#people_pane').data('lock', false) // unlock firing of loadMorePeople 
+  $('#people_pane').data('lock', true) // lock firing of loadMorePeople until populatePeopleResultsPane runs 
 	
   $(window).scroll(function(){  //this fires loadMoreAlerts if we've hit the bottom of the page and it's not locked. 
       // if we're not locked 
@@ -354,13 +354,19 @@ $(document).ready(function() {
         } else {
           $('#alerts_preview').data('alertsData', alertsData);  //store alerts data
         }
-        populateAlertsPreviewPane(page); // stuff data into main alerts page
-		    
+        populateAlertsPreviewPane(page); // stuff data into main alerts page    
   }	
+  
+	function loadMoreAlerts(){
+    $('#alerts_preview').data('lock', true);    //lock it
+    var loadingMoreString = '<li id="loadingMoreAlerts"><img src="images/loading.gif">Loading more alerts...<br /></li>';
+    $('#alerts_preview').append(loadingMoreString);
+    $('#alerts_preview').data('page', $('#alerts_preview').data('page') + 1 );  //increment page counter 
+    fetchAlerts($('#alerts_preview').data('page'));
+  }
 		
 	function populateAlertsPreviewPane(page){
 		alertsData = $('#alerts_preview').data('alertsData');  //just for redability 
-		$('#alerts_preview').data('lock', false); //unlock loading of more alerts
 		if (page == 1){  
 		  hideMessageBox();
 		  $('#alerts_preview').empty();
@@ -407,6 +413,12 @@ $(document).ready(function() {
 			}
 			alertPreviewString += '</a></li>';
 		  $('#alerts_preview').append(alertPreviewString);
+		}
+		if (alertsData.length ==  ALERTS_PER_PAGE * page){
+		  $('#alerts_preview').data('lock', false); //unlock loading of more alerts
+		} else {
+      var loadingMoreString = '<li id="loadingMoreAlerts">End of alerts.<br /></li>';
+      $('#alerts_preview').append(loadingMoreString);
 		}
 	}	
 	
@@ -463,15 +475,7 @@ $(document).ready(function() {
 		$('#ackButton').text('working...');
 		acknowledgeAlert(data[id].detail.path, responseData);	 
 	});	
-}	
-	
-  function loadMoreAlerts(){
-    $('#alerts_preview').data('lock', true);    //lock it
-    var loadingMoreString = '<li id="loadingMoreAlerts"><img src="images/loading.gif">Loading more alerts...<br /></li>';
-    $('#alerts_preview').append(loadingMoreString);
-    $('#alerts_preview').data('page', $('#alerts_preview').data('page') + 1 );  //increment page counter 
-    fetchAlerts($('#alerts_preview').data('page'));
-  }	
+}		
 	
 	function acknowledgeAlert(path, calldown){
 		var xhr = $.ajax({
@@ -543,7 +547,10 @@ $(document).ready(function() {
 	
 	// takes the contents of #people_search_form, gets results form the server, and fires the populate function on success 
 	function makeSearchRequest(page){  
-		showMessageBox('loadingsearch', '#people_results');
+	  if (page === undefined || page === 1){   
+	    page = 1;      //// first page requested, loading msg at top 
+		  showMessageBox('loadingsearch', '#people_results');
+		}
 		//////// silently add a wildcard (*) to the end of names
 		var searchDataObject = $('#people_search_form').serializeObject(); 
 		var reWild = /[^\*]$/;  /// returns true is there is no trailing wildcard
@@ -559,7 +566,7 @@ $(document).ready(function() {
 		   url: DOMAIN + '/search/show_advanced.json?page=' + page,
 			 beforeSend: function(xhr) { xhr.setRequestHeader("Cookie", getCookie()); },
 		   success: function(data) { 
-		   	populatePeopleResultsPane(data, page);
+		   	preparePeopleData(data, page); 
 		   },
 		   error: function(xhr) {
 		   	hideMessageBox();
@@ -572,31 +579,50 @@ $(document).ready(function() {
 		});//end $.ajax	 
 	}	
 
-	function populatePeopleResultsPane(resultsData, page){	
-	
-		if (resultsData.length == 0) {
-		  if (page == 1){
-			  showMessageBox('nosearch', '#people_results');
-			  return false;
-			} else {
-			   $('#loadingMorePeople').text('End of results.');
-			   return false; 
-			}
-		}
-		$('#people_pane').data('lock', false); //unlock loading of more alerts
+  function preparePeopleData(peopleData, page){
+    if (peopleData.length == 0) {
+          if (page == 1){
+            showMessageBox('nosearch', '#people_results');
+            return false;
+          } else {
+            $('#loadingMorePeople').text('End of results.');
+            return false; 
+          }
+        }
+        if (peopleData[0].SESSION == 'EXPIRED') {    
+          jQT.goTo($('#signin_pane'), 'flip');
+          showMessageBox('expired', '#signin_fields');
+          return false;
+        }
+        if (page > 1){  // if we need to append this data to the current set
+          var currentData = $('#people_pane').data('peopleResultsData');  //make a copy
+          var firstNewPersonNumber = PEOPLE_PER_PAGE * (page -1);
+          for (var d in peopleData) {
+            var k = parseInt(firstNewPersonNumber) + parseInt(d);
+            currentData[k] = peopleData[d];  //alter the copy
+          }
+          $('#people_pane').data('peopleResultsData', currentData);  //overwrite old with altered copy
+        } else {
+          $('#people_pane').data('peopleResultsData', peopleData);  //store results data
+        }
+        populatePeopleResultsPane(page); // stuff data into main alerts page    
+  }	
 
+	function populatePeopleResultsPane(page){	
+		resultsData = $('#people_pane').data('peopleResultsData');  //just for redability 
 		if (page == 1){  
 		  hideMessageBox();
 		  $('#people_results').empty();
+		  var firstNewPersonNumber = 0;
 		} else {
 		  $('#loadingMorePeople').remove();
+		  var firstNewPersonNumber = PEOPLE_PER_PAGE * (page - 1);
 		}	
-	
-  	$('#people_pane').data('peopleResultsData', resultsData);  //store the fetched alerts data
-		for (var d in resultsData){
+		
+		for (var d = firstNewPersonNumber; d < resultsData.length; d++){ 		 	
 			var personResultString = 
 				'<ul id="people" class="people edgetoedge"><li class="person arrow">' + 
-				'<a href="#new_contact_pane" class="slideup" contact_id="'+ d + '">'; // **THIS BREAKS WITHOUT ANIMATION CLASS.  NO, I DON'T KNOW WHY***
+				'<a href="#new_contact_pane" class="slideup" contact_id="'+ d + '">'; // **THIS BREAKS WITHOUT ANIMATION CLASS.  I DO NOT KNOW WHY***
 			if (resultsData[d].header && resultsData[d].header.length > 0){  						////contact name 
 				personResultString += '<p class="header">' + resultsData[d].header + '</p>';  
 			} 
@@ -610,13 +636,19 @@ $(document).ready(function() {
 			$('#people_results').append(personResultString );
 			hideMessageBox();
   	} 
-    $('#people_results').append('<br id="spacerBreak" />');	
+		if (resultsData.length ==  PEOPLE_PER_PAGE * page){ 
+		  $('#people_pane').data('lock', false); //unlock loading of more results
+		} else {
+      var loadingMoreString = '<ul class="edgetoedge" id="loadingMorePeople"><li>End of results.<br /></li></ul>';
+      $('#people_results').append(loadingMoreString);
+		}
+    //$('#people_results').append('<br id="spacerBreak" />');	
   }
 	
   function loadMorePeople(){
     $('#people_pane').data('lock', true);    //lock it
-    var loadingMoreString = '<ul id="loadingMorePeople"><li><img src="images/loading.gif">Loading more results...<br /></li></ul>';
-    $('#people_pane').append(loadingMoreString);
+    var loadingMoreString = '<ul class="edgetoedge" id="loadingMorePeople"><li><img src="images/loading.gif">Loading more results...<br /></li><ul>';
+    $('#people_results').append(loadingMoreString);
     $('#people_pane').data('page', $('#people_pane').data('page') + 1 );  //increment page counter 
     makeSearchRequest($('#people_pane').data('page'));
   }	
@@ -655,6 +687,7 @@ $(document).ready(function() {
 		
 	$('#people_search_pane').bind('pageAnimationStart', function(event, info){
 		if (info.direction == 'in') {
+		  $('#people_pane').data('page', 1);
 			// fetchRoles(); 
 			// fetchJurisdictions();
 			// setRoles(data);

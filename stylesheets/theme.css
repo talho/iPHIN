@@ -54,7 +54,7 @@ body.landscape .toolbar > h1 {
 .footbar {
     -webkit-box-sizing: border-box;
     border-top: 1px solid #2d3642;
-    height: 35px;
+    height: 55px;
     background: url(img/toolbar.png) #6d84a2 repeat-x;
     position: relative;
     bottom: 0px;
@@ -72,7 +72,7 @@ body.landscape .toolbar > h1 {
     padding-top: 8px;
     margin: 0px;
     height: 20px;
-    width: 100%;
+    width: 250px;
     font-size: 15px;
     font-weight: bold;
     text-shadow: rgba(0, 0, 0, 0.4) 0px -1px 0;
