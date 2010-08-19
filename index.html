@@ -12,7 +12,6 @@
 		<script charset='utf-8' src='javascript/jquery.js'            type='text/javascript'></script>
     <script charset='utf-8' src='javascript/jqtouch.js'           type='text/javascript'></script>
     <script charset='utf-8' src='javascript/jquery.ba-serializeobject.min.js' type='text/javascript'></script>
-    <script charset='utf-8' src='javascript/json2.js'             type='text/javascript'></script>
     <script charset='utf-8' src='javascript/iphin.js'             type='text/javascript'></script>
   </head>
   
@@ -89,9 +88,9 @@
       </div>
       <ul class="rounded">
         <form action="/search/show_advanced" method="post" id="people_search_form" accept-charset="utf-8">
-            <li><input name="first_name" id="people_search_form_first_name" class="peopleEnterkey" type="text" placeholder="First Name"></li>
-            <li><input name="last_name"  id="people_search_form_last_name" class="peopleEnterkey" type="text" placeholder="Last Name"></li>
-            <li><input name="email" id="people_search_form_email" class="peopleEnterkey" type="text" placeholder="E-mail"></li>
+            <li><input name="conditions[first_name]" id="people_search_form_first_name" class="peopleEnterkey" type="text" placeholder="First Name"></li>
+            <li><input name="conditions[last_name]"  id="people_search_form_last_name" class="peopleEnterkey" type="text" placeholder="Last Name"></li>
+            <li><input name="conditions[email]" id="people_search_form_email" class="peopleEnterkey" type="text" placeholder="E-mail"></li>
             <li id="people_jurisdictions_holder">
               <div id="people_jurisdictions_select"></div>
             </li>
@@ -108,7 +107,7 @@
     <div id="people_pane">
     	<div class="toolbar">
     		<h1>People</h1>
-    		<a href="#" class="back">Search</a>
+    		<a href="#" class="back">Back</a>
   		</div>
   		<div id="people">
         <ul id="people_results" class="people rounded edgetoedge">

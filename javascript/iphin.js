@@ -48,40 +48,45 @@ var jQT = new $.jQTouch({
   ]
 });
 
-	function supports_local_storage() {
-		return ('localStorage' in window) && window['localStorage'] !== null;
-	}
-
-	function setCookie(data) {
+function setCookie(data) {
 		window['localStorage']._cookie = data.cookie;
 		}
-	function getCookie() {
+function getCookie() {
 		return window['localStorage']._cookie;
 	}
 
-	function setAlertDetail(data) {window['localStorage'].alertDetail = data;}
-	function getAlertDetail() {return window['localStorage'].alertDetail;}
-
-	function setRolesExpiresOn(date) {window['localStorage'].rolesExpiresOn = date;}
-	function rolesHasExpired() {return (Date() > new Date(window['localStorage'].rolesExpiresOn||0)) ;}
-
-	function getRoles() {return JSON.parse(window['localStorage'].roles||"[]");}
-	function setRoles(data) {
+function getRoles() {
+    return $('body').data('roles') || "";
+  }
+function setRoles(data) {
 		if (data.roles.length>0) {
-			window['localStorage'].roles = JSON.stringify(data.roles);
+			$('body').data('roles', data.roles);
 			setRolesExpiresOn(data.expires_on);
 		}
 	}
 	
-	function setJurisdictionsExpiresOn(date) {window['localStorage'].jurisdictionsExpiresOn = date;}
-	function jurisdictionsHasExpired() {return (Date() > new Date(window['localStorage'].jurisdictionsExpiresOn||0)) ;}
-
-	function getJurisdictions() {return JSON.parse(window['localStorage'].jurisdictions||"[]");}
-	function setJurisdictions(data) {
+function getJurisdictions() {
+	  return $('body').data('jurisdictions') || "";
+	}
+function setJurisdictions(data) {
 		if (data.jurisdictions.length>0) {
-			window['localStorage'].jurisdictions = JSON.stringify(data.jurisdictions);
+		  $('body').data('roles', data.jurisdictions);
 			setJurisdictionsExpiresOn(data.expires_on);
 		}
+	}
+	
+function setRolesExpiresOn(date) {
+	  $('body').data('roles_expires_on', date);
+	}
+function rolesHasExpired() {
+	  return (Date() > new Date($('body').data('roles_expires_on')||0)) ;
+	}
+	
+function setJurisdictionsExpiresOn(date) {
+	  $('body').data('jurisdictions_expires_on', date);
+	}
+function jurisdictionsHasExpired() {
+	  return (Date() > new Date($('body').data('jurisdictions_expires_on')||0)) ;
 	}
 
 function msg(message) {
@@ -133,24 +138,6 @@ $(document).ready(function() {
 	} else {
 		jQT.goTo($('#signin_pane'), 'flip');
 	}		
-	
-	//set up [enter key] listener for login
-	$('#loginEmailField, #loginPasswordField').keypress(function(e) {
-    if(e.which == 13) {
-    	e.preventDefault();
-      jQuery(this).blur();
-      jQuery('#signin').focus().click();
-    }
-	});
-	
-	//set up [enter key] listener for people search
-	$('.peopleEnterkey').keypress(function(e) {
-    if(e.which == 13) {
-    e.preventDefault();
-    jQuery(this).blur();
-    jQuery('#quicksearch').focus().click();
-   }
-	});
 
 ////////////////////////// Initial setup ////////////////////////// 	
 	$('a#signin').click(function(event) {
@@ -181,12 +168,84 @@ $(document).ready(function() {
 		});
 		return false;
 	});
-		
+	$('#loginEmailField, #loginPasswordField').keypress(function(e) { //set up [enter key] listener for login
+    if(e.which == 13) {
+    	e.preventDefault();
+      jQuery(this).blur();
+      jQuery('#signin').focus().click();
+    }
+	});		
+	$('.peopleEnterkey').keypress(function(e) { //set up [enter key] listener for people search
+    if(e.which == 13) {
+    e.preventDefault();
+    jQuery(this).blur();
+    jQuery('#quicksearch').focus().click();
+   }
+	});
 	$('#alerts_preview').data('page', 1);  // initialize alerts pagination	
-  $('#people_pane').data('page', 1);  // initialize alerts pagination	
-  
+  $('#people_pane').data('page', 1);  // initialize alerts pagination	 
   $('#alerts_preview').data('lock', true) // lock firing of loadMoreAlerts until populateAlertsPreviewPane runs 
   $('#people_pane').data('lock', true) // lock firing of loadMorePeople until populatePeopleResultsPane runs 
+	
+	//////// Alerts bindings //////////
+	$('#alerts_pane').bind('pageAnimationStart', function(event, info){
+   	if (info.direction == 'in') {
+   	  $('body').data('currentPane', 'alerts');
+   		if (!$("#alerts_pane").data('loaded')){
+				fetchAlerts();
+        $("#alerts_pane").data('loaded', true)
+   		}
+   	}
+	});	
+	$('#alert_detail_pane').bind('pageAnimationStart', function(event, info){
+		if (info.direction == 'in') {
+			var id = $(this).data('referrer').attr('alert_id');
+			var data = $('#alerts_preview').data('alertsData'); 
+			populateAlertDetailPane(data,id) 
+		}
+	});		
+	$('#refreshAlertsButton').click(function(event) {  //refreshbutton binding
+	  $('#alerts_preview').data('lock', false); //unlock loading of more alerts
+	  $('#alerts_preview').data('page', 1);
+		fetchAlerts();
+		return false;
+	});		
+	$('#logoutButton').click(function(event) { 
+	  window['localStorage'].clear();
+	  jQT.goTo($('#signin_pane'), 'flip');
+	  return false;			 
+	});			
+	$('#loadmoreButton').click(function(event) { 
+	  loadMoreAlerts();
+	  return false;			 
+	});
+	
+	//////// People bindings //////////
+	$('#people_search_pane').bind('pageAnimationStart', function(event, info){
+		if (info.direction == 'in') {
+		  $('#people_pane').data('page', 1);
+			getJurisdictions();
+			getRoles();
+		}
+	});	
+	$('#people_pane').bind('pageAnimationStart', function(event, info){
+		if (info.direction == 'in') {
+      $('body').data('currentPane', 'people'); 
+			if(!$("#people_pane").data('loaded')) {   //don't hit the server again if there are already current search results 
+				$('#people_results').empty();
+    			makeSearchRequest(1);
+    		}
+    		$('#people_pane').data('loaded', false);
+		}
+	});	
+	$('#new_contact_pane').bind('pageAnimationStart', function(event, info){	
+		if (info.direction == 'in') {
+			var id = $(this).data('referrer').attr('contact_id');
+			var data = $('#people_pane').data('peopleResultsData'); 
+			populateNewContactPane(data,id) ;
+			$('#people_pane').data('loaded', true);  			//toggle 'loaded' to prevent refresh 
+		}
+	});	
 	
   $(window).scroll(function(){  //this fires loadMoreAlerts if we've hit the bottom of the page and it's not locked. 
     // if we're not locked 
@@ -206,28 +265,30 @@ $(document).ready(function() {
 	// Quietly fetch roles and jurisdictions 
 	function fetchRoles() {
 		var roles = getRoles();
-		if ((roles.length>0) && (!rolesHasExpired())) {
+		if ((roles.length > 0) && (!rolesHasExpired())) {
 			populateRolesSelector(roles);
 		}
 		else {
-			$.ajax({
-				type: "GET",
-		  		dataType: "json",
-					timeout: 10000,
-		 		url: DOMAIN + "/roles.json",
-		  		beforeSend: function(xhr) { xhr.setRequestHeader("Cookie", getCookie()); },
-				success: function(data) {
-					setRoles(data);
-					populateRolesSelector(roles);
-					},
-				error: function(xhr) {
-					switch (xhr.status) {
-//						default:  msg("Network error. (code: people " + xhr.status + ")");
-          }
-				}
+   		$.ajax({
+  		  type: "GET",
+  		  dataType: "json",
+  			timeout: 10000,
+  			cache: false,
+  		  url: DOMAIN + '/roles.json' ,
+  			beforeSend: function(xhr) { xhr.setRequestHeader("Cookie", getCookie()); },
+        success: function(data) {
+          setRoles(data);
+          populateRolesSelector(data.roles);
+        },
+        error: function(xhr) {
+          //alert('Could not fetch Roles List.');
+          //switch (xhr.status) {
+          //default:  msg("Network error. (code: people " + xhr.status + ")");
+          //}
+        }
 			});
-		};
-	}
+		}
+	} 
 
 	function fetchJurisdictions() {
 		var jurisdictions = getJurisdictions();
@@ -243,7 +304,7 @@ $(document).ready(function() {
 				beforeSend: function(xhr) { xhr.setRequestHeader("Cookie", getCookie()); },
 				success: function(data) {
 					setJurisdictions(data);
-					populateJurisdictionsSelector(jurisdictions);
+					populateJurisdictionsSelector(data.jurisdictions);
 					},
 				error: function(xhr) {
 					switch (xhr.status) {
@@ -252,11 +313,14 @@ $(document).ready(function() {
 				}
 			});
 		};
-	}
+	}  
 
-	function populateRolesSelector(roles){
+
+}); // end document.ready
+
+function populateRolesSelector(roles){
 		var rolesSelectString = 
-			'<select name="[role_ids][]" >' +
+			'<select name="with[role_ids][]" >' +
 			'<option value="" SELECTED>Any Role...</option>';
 		for (var r in roles){
 			rolesSelectString += '<option value="' + roles[r].id + '">' + roles[r].name + '</option>';
@@ -265,9 +329,9 @@ $(document).ready(function() {
 		$('#people_roles_select').html(rolesSelectString); 	
 	}
 	
-	function populateJurisdictionsSelector(jurisdictions){
+function populateJurisdictionsSelector(jurisdictions){
 		var jurisdictionsSelectString = 
-			'<select name="[jurisdiction_ids][]" multiple="multiple">' +
+			'<select name="with[jurisdiction_ids][]" multiple="multiple">' +
 			'<option value="" SELECTED>Any Jurisdiction...</option>';
 		for (var j in jurisdictions){
 			jurisdictionsSelectString += '<option value="' + jurisdictions[j].id + '">' + jurisdictions[j].name + '</option>';
@@ -276,9 +340,8 @@ $(document).ready(function() {
 		$('#people_jurisdictions_select').html(jurisdictionsSelectString); 
 	}
 
-
 ////////////////////////////// Alerts ///////////////////////////////////	
-	function fetchAlerts(page) {
+function fetchAlerts(page) {
 	  if (page === undefined || page === 1){   
 	    page = 1;      //// first page requested, loading msg at top 
 	    showMessageBox('loadingalerts', '#alerts_preview');
@@ -307,7 +370,7 @@ $(document).ready(function() {
 		});
 	}	
 	
-  function prepareAlertsData(alertsData, page){
+ function prepareAlertsData(alertsData, page){
     if (alertsData.length == 0) {
           if (page == 1){
             $("#messageBox").text('No alerts at this time.');
@@ -336,7 +399,7 @@ $(document).ready(function() {
         populateAlertsPreviewPane(page); // stuff data into main alerts page    
   }	
   
-	function loadMoreAlerts(){
+function loadMoreAlerts(){
     $('#alerts_preview').data('lock', true);    //lock it
     var loadingMoreString = '<li id="loadingMoreAlerts"><img src="images/loading.gif">Loading more alerts...<br /></li>';
     $('#alerts_preview').append(loadingMoreString);
@@ -344,12 +407,15 @@ $(document).ready(function() {
     fetchAlerts($('#alerts_preview').data('page'));
   }
 		
-	function populateAlertsPreviewPane(page){
+function populateAlertsPreviewPane(page){  
 		alertsData = $('#alerts_preview').data('alertsData');  //just for redability 
 		if (page == 1){  
 		  hideMessageBox();
 		  $('#alerts_preview').empty();
 		  var firstNewAlertNumber = 0;
+		    // this is redundant with the binding on alerts_pane animation->in, 
+	      // but needed if the app loads and a cookie is present 
+	    $('body').data('currentPane', 'alerts');
 		} else {
 		  $('#loadingMoreAlerts').remove();
 		  var firstNewAlertNumber = ALERTS_PER_PAGE * (page - 1);
@@ -401,7 +467,7 @@ $(document).ready(function() {
 		}
 	}	
 	
-	function populateAlertDetailPane(data, id) { //Build an html string from the JSON data and append it to alert_details.  This is messy :(
+function populateAlertDetailPane(data, id) { //Build an html string from the JSON data and append it to alert_details.  This is messy :(
 		$('#alert_details').empty();	
 		var alertDetailsString = '<ul class="alerts rounded"><li><p class="header" id="alertDetailHeader">'+ data[id].header + '</p>';
 		for ( var p in data[id].detail.pair ) {  //loop through the details for this alert 
@@ -439,7 +505,7 @@ $(document).ready(function() {
 		});
 
 		///////////// handle acknowledge button clicks
-	$('#ackButton').click(function() {
+	$('#ackButton').click( function() {
 		var responseData = '';
 		if (doAdvancedAck) {
 			var detailResponse = $("input[name='ackAdvancedResponse']:checked").val(); //grab the response, if any 
@@ -454,22 +520,22 @@ $(document).ready(function() {
 		$('#ackButton').text('working...');
 		acknowledgeAlert(data[id].detail.path, responseData);	 
 	});	
-}		///what does this close? 
+}		///what does this close?  
 	
-	function acknowledgeAlert(path, calldown){
+function acknowledgeAlert(path, calldown){
 		var xhr = $.ajax({
-		   type: "GET",
-		   url: DOMAIN + path + '.json', 
-		   data: calldown,  
-			 timeout: 10000,
+		  type: "GET",
+		  url: DOMAIN + path + '.json', 
+		  data: calldown,  
+			timeout: 10000,
 			beforeSend: function(xhr) {
-				xhr.setRequestHeader("Cookie", getCookie()); 
+			  xhr.setRequestHeader("Cookie", getCookie()); 
 			},
-		   success: function(resp, text) {
- 				if (xhr.status == 200) {        ///Hacky crappy workaround to jquery bug wherein EVERY response comes back 'success'
+		  success: function(resp, text) {
+ 			  if (xhr.status == 200) {        ///Hacky crappy workaround to jquery bug wherein EVERY response comes back 'success'
  					// everything ok
  					$('#ackButton').text('Thank you.');
- 					$('#alerts_pane').data('loaded', false);  //cause refresh when user returns to alerts_preview
+ 					$('#alerts_pane').data('loaded', false);  // unset 'loaded' flag
  					setTimeout(function() { $('#ackButton').fadeOut(); }, 2000);	
  				} else {
    				// it's actually an error
@@ -478,65 +544,21 @@ $(document).ready(function() {
  				}
 			},
 		   error: function(xhr) {
-		   	//alert('no how no way: ' + xhr.statusText);
 				$('#ackButton').text('Acknowledge');
-		   	msg('Network error. (code: ack ' + xhr.statusText + ', ' + xhr.response + ')');
+		   	msg('Network error.  Alert NOT acknowledged.');
 			}
 		});
 	}	
-	
-	///////////// Alerts bindings /////////////
-	$('#alerts_pane').bind('pageAnimationStart', function(event, info){
-   	if (info.direction == 'in') {
-   	  $('body').data('currentPane', 'alerts');
-   		if (!$("#alerts_pane").data('loaded')){
-				fetchAlerts();
-        $("#alerts_pane").data('loaded', true)
-   		}
-   	}
-	});
-	
-	$('#alert_detail_pane').bind('pageAnimationStart', function(event, info){
-		if (info.direction == 'in') {
-			var id = $(this).data('referrer').attr('alert_id');
-			var data = $('#alerts_preview').data('alertsData'); 
-			populateAlertDetailPane(data,id) 
-		}
-	});	
-	
-	$('#refreshAlertsButton').click(function(event) {  //refreshbutton binding
-	  $('#alerts_preview').data('lock', false); //unlock loading of more alerts
-	  $('#alerts_preview').data('page', 1);
-		fetchAlerts();
-		return false;
-	});	
-	
-	$('#logoutButton').click(function(event) { 
-	  window['localStorage'].clear();
-	  jQT.goTo($('#signin_pane'), 'flip');
-	  return false;			 
-	});
-		
-	$('#loadmoreButton').click(function(event) { 
-	  loadMoreAlerts();
-	  return false;			 
-	});
-		
+			
 /////////////////////// People Search  //////////////////////				
 	
 	// takes the contents of #people_search_form, gets results form the server, and fires the populate function on success 
-	function makeSearchRequest(page){  
+function makeSearchRequest(page){  
 	  if (page === undefined || page === 1){   
 	    page = 1;      //// first page requested, loading msg at top 
 		  showMessageBox('loadingsearch', '#people_results');
 		}
-		//////// silently add a wildcard (*) to the end of names
-		var searchDataObject = $('#people_search_form').serializeObject(); 
-		var reWild = /[^\*]$/;  /// returns true is there is no trailing wildcard
-		//////// don't want to double up the wildcard
-		if (searchDataObject.first_name.match(reWild)){ searchDataObject.first_name += '*'; } 
-		if (searchDataObject.last_name.match(reWild)){ searchDataObject.last_name += '*'; } 
-		$('#people_results').data('searchData', $.param(searchDataObject));		//convert back to URLencoded string
+		$('#people_results').data('searchData', $('#people_search_form').serialize() );
 		$.ajax({
 		   type: "POST",
 		   data: $('#people_results').data('searchData'),
@@ -558,7 +580,7 @@ $(document).ready(function() {
 		});//end $.ajax	 
 	}	
 
-  function preparePeopleData(peopleData, page){
+function preparePeopleData(peopleData, page){
     if (peopleData.length == 0) {
           if (page == 1){
             showMessageBox('nosearch', '#people_results');
@@ -587,8 +609,8 @@ $(document).ready(function() {
         populatePeopleResultsPane(page); // stuff data into main alerts page    
   }	
 
-	function populatePeopleResultsPane(page){	
-	  $('#spacerBreak').remove();
+function populatePeopleResultsPane(page){	
+	  $('.spacerBreak').remove();
 		resultsData = $('#people_pane').data('peopleResultsData');  //just for redability 
 		if (page == 1){  
 		  hideMessageBox();
@@ -618,10 +640,10 @@ $(document).ready(function() {
       var loadingMoreString = '<li id="loadingMorePeople">End of results.<br /></li>';
       $('#people_results').append(loadingMoreString);
 		}
-    $('#people').append('<br id="spacerBreak" />');	
+    $('#people').append('<br class="spacerBreak" /><br class="spacerBreak" />');	
   }
 	
-  function loadMorePeople(){
+function loadMorePeople(){
     $('#people_pane').data('lock', true);    //lock it
     var loadingMoreString = '<li id="loadingMorePeople"><img src="images/loading.gif">Loading more results...<br /></li>';
     $('#people_results').append(loadingMoreString);
@@ -629,7 +651,7 @@ $(document).ready(function() {
     makeSearchRequest($('#people_pane').data('page'));
   }	
 
-	function populateNewContactPane(data, id){	
+function populateNewContactPane(data, id){	
 		contactPaneString = '<ul class="rounded"><form id="new_contact_form" action="#" method="post" accept-charset="utf-8">';
 		var name = data[id].header.split(" ");
 		var firstName = name[0];
@@ -658,43 +680,9 @@ $(document).ready(function() {
 			navigator.contacts.newContact(contact, addContact_Return);
 		}); 		
 	}
-	
-	////////////////// People bindings //////////////
-		
-	$('#people_search_pane').bind('pageAnimationStart', function(event, info){
-		if (info.direction == 'in') {
-		  $('#people_pane').data('page', 1);
-			// fetchRoles(); 
-			// fetchJurisdictions();
-			// setRoles(data);
-		}
-	});
-	
-	$('#people_pane').bind('pageAnimationStart', function(event, info){
-		if (info.direction == 'in') {
-      $('body').data('currentPane', 'people'); 
-			if(!$("#people_pane").data('loaded')) {   //don't hit the server again if there are already current search results 
-				$('#people_results').empty();
-    			makeSearchRequest(1);
-    		}
-    		$('#people_pane').data('loaded', false);
-		}
-	});
-		
-	$('#new_contact_pane').bind('pageAnimationStart', function(event, info){	
-		if (info.direction == 'in') {
-			var id = $(this).data('referrer').attr('contact_id');
-			var data = $('#people_pane').data('peopleResultsData'); 
-			populateNewContactPane(data,id) ;
-			$('#people_pane').data('loaded', true);  			//toggle 'loaded' to prevent refresh 
-		}
-	});	
-	
-}); // end document.ready 
 
 function addContact_Return(contact) {
 	if (contact) {
 		navigator.notification.alert(contact.firstName+" "+contact.lastName,"Created Contact", "OK");
 	}
 }
-
