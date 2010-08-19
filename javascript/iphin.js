@@ -206,7 +206,6 @@ $(document).ready(function() {
 	});		
 	
 	$('#refreshAlertsButton').click(function(event) {  //refreshbutton binding
-	  $('#alerts_preview').data('lock', false); //unlock loading of more alerts
 	  $('#alerts_preview').data('page', 1);
 		fetchAlerts();
 		return false;
@@ -241,15 +240,6 @@ $(document).ready(function() {
     			makeSearchRequest(1);
     		}
     		$('#people_pane').data('loaded', false);
-		}
-	});	
-	
-	$('#new_contact_pane').bind('pageAnimationStart', function(event, info){	
-		if (info.direction == 'in') {
-			var id = $(this).data('referrer').attr('contact_id');
-			var data = $('#people_pane').data('peopleResultsData'); 
-			populateNewContactPane(data,id) ;
-			$('#people_pane').data('loaded', true);  			//toggle 'loaded' to prevent refresh 
 		}
 	});	
 	
@@ -472,8 +462,8 @@ function populateAlertsPreviewPane(page){
 		if (alertsData.length ==  ALERTS_PER_PAGE * page){
 		  $('#alerts_preview').data('lock', false); //unlock loading of more alerts
 		} else {
-      var loadingMoreString = '<li id="loadingMoreAlerts">End of alerts.<br /></li>';
-      $('#alerts_preview').append(loadingMoreString);
+      var noMoreString = '<li id="loadingMoreAlerts">End of alerts.<br /></li>';
+      $('#alerts_preview').append(noMoreString);
 		}
 	}	
 	
@@ -647,6 +637,15 @@ function populatePeopleResultsPane(page){
     $('#people_results').append(loadingMoreString);
 	}
   $('#people').append('<br class="spacerBreak" /><br class="spacerBreak" />');	
+  
+  $('#new_contact_pane').bind('pageAnimationStart', function(event, info){	
+		if (info.direction == 'in') {
+			var id = $(this).data('referrer').attr('contact_id');
+			var data = $('#people_pane').data('peopleResultsData'); 
+			populateNewContactPane(data,id) ;
+			$('#people_pane').data('loaded', true);  			//toggle 'loaded' to prevent refresh 
+		}
+	});	
 }
 	
 function loadMorePeople(){
