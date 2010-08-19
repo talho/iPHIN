@@ -339,7 +339,13 @@
             
             // Collapse the keyboard
             $(':focus').blur();
-
+            
+//////added to prevent scrolling back to top on acknowledge-alert clicks.            
+            // "Prevent" browser from scrolling up before the animation 
+            fromPage.css("top", -window.pageYOffset);
+            // Set top back to 0 incase the top has been changed by the command above
+            toPage.css("top", 0);
+            
             // Make sure we are scrolled up to hide location bar
             scrollTo(0, 0);
             

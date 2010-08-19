@@ -21,6 +21,7 @@ ul.people li p {font-weight: normal; font-size: 13px;}
 .severityIcon{
 	float: left;
 	margin-right: 8px;
+	padding-top: 2px;
 }
 
 .ackPreview{
