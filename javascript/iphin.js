@@ -253,10 +253,20 @@ $(document).ready(function() {
         validInput = true;
       }
     if (validInput){
-      jQT.goTo($('#people_pane'), 'slideDown');
+      jQT.goTo($('#people_pane'), 'slideup');
     }
     return false;
 	});
+				  
+	$('#new_contact_pane').bind('pageAnimationStart', function(event, info){	
+		if (info.direction == 'in') {
+			var id = $(this).data('referrer').attr('contact_id');
+			var data = $('#people_pane').data('peopleResultsData'); 
+			populateNewContactPane(data,id) ;
+			$('#people_pane').data('loaded', true);  			//toggle 'loaded' to prevent refresh 
+		}
+	});	
+				  
 	
 	function userSignIn(){
 	  $('#signin').text('Authorizing...');
@@ -618,7 +628,7 @@ function populatePeopleResultsPane(page){
 	}	
 	for (var d = firstNewPersonNumber; d < resultsData.length; d++){ 		 	
 		var personResultString = '<li class="person arrow">' + 
-			'<a href="#new_contact_pane" class="slideup" contact_id="'+ d + '">'; // **THIS BREAKS WITHOUT ANIMATION CLASS.  I DO NOT KNOW WHY***
+			'<a href="#new_contact_pane" class="pop" contact_id="'+ d + '">'; // **THIS BREAKS WITHOUT ANIMATION CLASS.  I DO NOT KNOW WHY***
 		if (resultsData[d].header.first_name && (resultsData[d].header.first_name.length > 0 || resultsData[d].header.last_name.length > 0)){  						////contact name 
 			personResultString += '<p class="header">' + resultsData[d].header.first_name + ' ' + resultsData[d].header.last_name + '</p>';  
 		} 
@@ -637,15 +647,6 @@ function populatePeopleResultsPane(page){
     $('#people_results').append(loadingMoreString);
 	}
   $('#people').append('<br class="spacerBreak" /><br class="spacerBreak" />');	
-  
-  $('#new_contact_pane').bind('pageAnimationStart', function(event, info){	
-		if (info.direction == 'in') {
-			var id = $(this).data('referrer').attr('contact_id');
-			var data = $('#people_pane').data('peopleResultsData'); 
-			populateNewContactPane(data,id) ;
-			$('#people_pane').data('loaded', true);  			//toggle 'loaded' to prevent refresh 
-		}
-	});	
 }
 	
 function loadMorePeople(){
