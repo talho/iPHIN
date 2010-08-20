@@ -386,7 +386,7 @@ function fetchAlerts(page) {
         if (xhr.readyState == 4){
           switch (xhr.status) {
             case  0: 
-              msg("Loss connect by Carrier, use Wi-Fi to Access Data.");			 
+              msg("Network unacessable.  Try using Wi-Fi?");			 
             break;			
             default: 
               msg("Network error. (code: alerts " + xhr.status + ")");
@@ -602,7 +602,7 @@ function makeSearchRequest(page){
       if (xhr.readyState == 4){
         switch (xhr.status) {
           case 500: msg("Likely search engine problem. (code: 500)"); break;
-          case   0: msg("Loss connect by Carrier, use Wi-Fi to Access Data."); break;
+          case   0: msg("Network error.  Try using Wi-Fi?."); break;
           default: msg("Network error. (code: people " + xhr.status + ")");
         }
       } else {
@@ -653,7 +653,7 @@ function populatePeopleResultsPane(page){
 	  var firstNewPersonNumber = PEOPLE_PER_PAGE * (page - 1);
 	}	
 	for (var d = firstNewPersonNumber; d < resultsData.length; d++){ 		 	
-		var personResultString = '<li class="person arrow">' + 
+		var personResultString = '<li class="person">' + 
 			'<a href="#new_contact_pane"  class="pop" contact_id="'+ d + '">'; // **THIS BREAKS BADLY WITHOUT ANIMATION CLASS.  I DO NOT KNOW WHY***
 		if (resultsData[d].header.first_name && (resultsData[d].header.first_name.length > 0 || resultsData[d].header.last_name.length > 0)){  						////contact name 
 			personResultString += '<p class="header">' + resultsData[d].header.first_name + ' ' + resultsData[d].header.last_name + '</p>';  
