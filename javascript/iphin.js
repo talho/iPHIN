@@ -1,7 +1,7 @@
 var PROTOCOL = "http://";
 //var HOST = "txphin.org" // for production
-var HOST = (/iphone/i.test(navigator.platform)) ? "192.168.30.97:8080" : "localhost:3000"
-//var HOST = "iphin.texashan.org"
+//var HOST = (/iphone/i.test(navigator.platform)) ? "192.168.30.97:8080" : "localhost:3000"
+var HOST = "iphin.texashan.org"
 //var HOST = "192.168.1.44:3000"; //rich's computer
 //var HOST = "localhost:3000";
 var DOMAIN   = PROTOCOL + HOST;
@@ -201,6 +201,7 @@ $(document).ready(function() {
 	$('#alert_detail_pane').bind('pageAnimationStart', function(event, info){
 		if (info.direction == 'in') {
 			var id = $(this).data('referrer').attr('alert_id');
+			//$('#alerts_preview').data('clickedAlert', $(this).data('referrer'));  //store what was clicked, used to de-highlight after ack
 			var data = $('#alerts_preview').data('alertsData'); 
 			populateAlertDetailPane(data,id) 
 		}
@@ -327,10 +328,10 @@ $(document).ready(function() {
   			cache: false,
   		  url: DOMAIN + '/roles.json' ,
   			beforeSend: function(xhr) { xhr.setRequestHeader("Cookie", getCookie()); },
-        success: function(data) {
-          setRoles(data);
+        success: function(rolesData) {
+          setRoles(rolesData);
           $('#people_roles_holder').show();
-          populateRolesSelector(data.roles);
+          populateRolesSelector(rolesData.roles);
         },
         error: function(xhr) {
           $('#people_roles_holder').hide();
@@ -351,10 +352,10 @@ $(document).ready(function() {
 				timeout: 10000,
 				url: DOMAIN + "/jurisdictions.json",
 				beforeSend: function(xhr) { xhr.setRequestHeader("Cookie", getCookie()); },
-				success: function(data) {
-					setJurisdictions(data);
+				success: function(jurisData) {
+					setJurisdictions(jurisData);
           $('#people_roles_holder').show();
-					populateJurisdictionsSelector(data.jurisdictions);
+					populateJurisdictionsSelector(jurisData.jurisdictions);
 					},
 				error: function(xhr) {
           $('#people_jurisdictions_holder').hide();
@@ -561,6 +562,8 @@ function acknowledgeAlert(path, calldown){
 				// everything ok
 				$('#ackButton').text('Thank you.');
 				$('#alerts_pane').data('loaded', false);  // unset 'loaded' flag
+				$('#alerts_preview').data('page', 1);
+				//$('#alerts_preview').data('clickedAlert').removeClass('ackPreview');
 				setTimeout(function() { $('#ackButton').fadeOut(); }, 2000);	
 			} else {
  				// it's actually an error
