@@ -1,8 +1,9 @@
 var PROTOCOL = "http://";
 //var HOST = "txphin.org" // for production
-//var HOST = (/iphone/i.test(navigator.platform)) ? "192.168.30.97:8080" : "localhost:3000"
+var HOST = (/iphone/i.test(navigator.platform)) ? "192.168.30.97:8080" : "localhost:3000"
 //var HOST = "iphin.texashan.org"
-var HOST = "192.168.1.44:3000"; //rich's computer
+//var HOST = "192.168.1.44:3000"; //rich's computer
+//var HOST = "localhost:3000";
 var DOMAIN   = PROTOCOL + HOST;
 var ALERTS_PER_PAGE = 10; // number of alerts pulled at a time 
 var PEOPLE_PER_PAGE = 10; // number of people results pulled at a time 
@@ -14,7 +15,7 @@ function onBodyLoad() {
 // PhoneGap is loaded and it is now safe to make calls PhoneGap methods
 function onDeviceReady() { 
 	try { navigator.network.isReachable(DOMAIN, reachableCallback); }
-	catch (e) {alert("Since this is not on the iPhone Network connection reporting could be erroreous.");}
+	catch (e) {msg("Not on the iPhone Network: connection reporting could be limited.");}
 }
 // Check network status
 function reachableCallback(reachability) {
@@ -22,10 +23,10 @@ function reachableCallback(reachability) {
 	wifiConnStatus = reachability.localWiFiConnectionStatus;
 	if (internetConnStatus == 0) {
 		if (wifiConnStatus == 1) { 
-			navigator.notification.alert("Loss Connect by Carrier, switch to Wi-Fi for Data Access.","TxPhin", "OK"); 
+			navigator.notification.alert("Network unavailable. Switch to Wi-Fi for Access.","TxPhin", "OK"); 
 		}
 		else if (wifiConnStatus == 0) { 
-			navigator.notification.alert("Loss Connect by Carrier and WiFi, relocate to get connection.","TxPhin", "OK"); 
+			navigator.notification.alert("Network unavailable. Relocate to get connection.","TxPhin", "OK"); 
 		}
 	}
 }
@@ -249,14 +250,30 @@ $(document).ready(function() {
            $('#people_search_form_last_name')[0].value.length > 1 || 
            $('#people_search_form_email')[0].value.length > 1 ||
            $('#people_search_form_roles')[0].value.length > 0 ||
-           $('#people_search_form_jurisdictions')[0].value.length > 0 ){    
+           $('#people_search_form_jurisdictions')[0].value.length > 0 ){ 	
         validInput = true;
       }
     if (validInput){
-      jQT.goTo($('#people_pane'), 'slideDown');
-    }
+      jQT.goTo($('#people_pane'), 'slideup');
+	} else {
+    $('badSearchInput').remove();
+    errorString = '<li id="badSearchInput" >Not enough input.</li>';
+    $('#people_search_form').prepend(errorString);
+    
+    //alert('You must enter at least two characters, or select a role / jurisdiction.');
+	}
     return false;
 	});
+				  
+	$('#new_contact_pane').bind('pageAnimationStart', function(event, info){	
+		if (info.direction == 'in') {
+			var id = $(this).data('referrer').attr('contact_id');
+			var data = $('#people_pane').data('peopleResultsData'); 
+			populateNewContactPane(data,id) ;
+			$('#people_pane').data('loaded', true);  			//toggle 'loaded' to prevent refresh 
+		}
+	});	
+				  
 	
 	function userSignIn(){
 	  $('#signin').text('Authorizing...');
@@ -283,11 +300,15 @@ $(document).ready(function() {
 	    error: function(xhr) {
 	      $('#signin').text('Sign In');
 	      $('#signin_pane').data('clicked', false);
-        switch (xhr.status) {
-		      case 401: msg("No user with this email and password."); break;
-				  case 0:   msg("No user with this email and password."); break;
-				  default: msg("Network error. (code: signin " + xhr.status + ")");
-			  }
+        if (xhr.readyState == 4){
+          switch (xhr.status) {
+            case 401: msg("No user with this email and password."); break;
+            case 0:   msg("No user with this email and password."); break;
+            default:  msg("Network error. (code: signin " + xhr.status + ")");
+          }
+        } else {
+          msg	('Error contacting server.');
+        }
 		  }
 	  });
   }
@@ -308,9 +329,11 @@ $(document).ready(function() {
   			beforeSend: function(xhr) { xhr.setRequestHeader("Cookie", getCookie()); },
         success: function(data) {
           setRoles(data);
+          $('#people_roles_holder').show();
           populateRolesSelector(data.roles);
         },
         error: function(xhr) {
+          $('#people_roles_holder').hide();
         }
 			});
 		}
@@ -330,9 +353,11 @@ $(document).ready(function() {
 				beforeSend: function(xhr) { xhr.setRequestHeader("Cookie", getCookie()); },
 				success: function(data) {
 					setJurisdictions(data);
+          $('#people_roles_holder').show();
 					populateJurisdictionsSelector(data.jurisdictions);
 					},
 				error: function(xhr) {
+          $('#people_jurisdictions_holder').hide();
 				}
 			});
 		};
@@ -357,14 +382,18 @@ function fetchAlerts(page) {
         prepareAlertsData(data, page);
       },
 		  error: function(xhr) {
-				switch (xhr.status) {
-					case  0: 
-						msg("Loss connect by Carrier, use Wi-Fi to Access Data.");			 
-					break;			
-					default: 
-						msg("Network error. (code: alerts " + xhr.status + ")");
-					break;  		
-				}
+        if (xhr.readyState == 4){
+          switch (xhr.status) {
+            case  0: 
+              msg("Loss connect by Carrier, use Wi-Fi to Access Data.");			 
+            break;			
+            default: 
+              msg("Network error. (code: alerts " + xhr.status + ")");
+            break;  		
+          }
+        } else {
+          msg("Error contacting server.");
+        }
 				$("#messageBox").text('Could not contact server.');
 			}
 		});
@@ -567,11 +596,15 @@ function makeSearchRequest(page){
 	   },
 	   error: function(xhr) {
 	   	hideMessageBox();
-			switch (xhr.status) {
-				case 500: msg("Likely search engine problem. (code: 500)"); break;
-				case   0: msg("Loss connect by Carrier, use Wi-Fi to Access Data."); break;
-				default: msg("Network error. (code: people " + xhr.status + ")");
-			}
+      if (xhr.readyState == 4){
+        switch (xhr.status) {
+          case 500: msg("Likely search engine problem. (code: 500)"); break;
+          case   0: msg("Loss connect by Carrier, use Wi-Fi to Access Data."); break;
+          default: msg("Network error. (code: people " + xhr.status + ")");
+        }
+      } else {
+        msg('Error contacting server.');
+      }
 		}
 	});//end $.ajax	 
 }	
@@ -618,7 +651,7 @@ function populatePeopleResultsPane(page){
 	}	
 	for (var d = firstNewPersonNumber; d < resultsData.length; d++){ 		 	
 		var personResultString = '<li class="person arrow">' + 
-			'<a href="#new_contact_pane" class="slideup" contact_id="'+ d + '">'; // **THIS BREAKS WITHOUT ANIMATION CLASS.  I DO NOT KNOW WHY***
+			'<a href="#new_contact_pane"  class="pop" contact_id="'+ d + '">'; // **THIS BREAKS BADLY WITHOUT ANIMATION CLASS.  I DO NOT KNOW WHY***
 		if (resultsData[d].header.first_name && (resultsData[d].header.first_name.length > 0 || resultsData[d].header.last_name.length > 0)){  						////contact name 
 			personResultString += '<p class="header">' + resultsData[d].header.first_name + ' ' + resultsData[d].header.last_name + '</p>';  
 		} 
@@ -637,15 +670,6 @@ function populatePeopleResultsPane(page){
     $('#people_results').append(loadingMoreString);
 	}
   $('#people').append('<br class="spacerBreak" /><br class="spacerBreak" />');	
-  
-  $('#new_contact_pane').bind('pageAnimationStart', function(event, info){	
-		if (info.direction == 'in') {
-			var id = $(this).data('referrer').attr('contact_id');
-			var data = $('#people_pane').data('peopleResultsData'); 
-			populateNewContactPane(data,id) ;
-			$('#people_pane').data('loaded', true);  			//toggle 'loaded' to prevent refresh 
-		}
-	});	
 }
 	
 function loadMorePeople(){
@@ -697,7 +721,7 @@ function populateRolesSelector(roles){
 	
 function populateJurisdictionsSelector(jurisdictions){
 	var jurisdictionsSelectString = 
-		'<select name="with[jurisdiction_ids][]" id="people_search_form_jurisdictions" multiple="multiple">' +
+		'<select name="with[jurisdiction_ids][]" id="people_search_form_jurisdictions">' +
 		'<option value="" SELECTED>Any Jurisdiction...</option>';
 	for (var j in jurisdictions){
 		jurisdictionsSelectString += '<option value="' + jurisdictions[j].id + '">' + jurisdictions[j].name + '</option>';
